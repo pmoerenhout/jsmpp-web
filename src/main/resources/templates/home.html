@@ -1,0 +1,14 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>SMS</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <link href="webjars/bootstrap/4.4.1/css/bootstrap.css"
+        th:href="@{/webjars/bootstrap/__#{bootstrap.version}__/css/bootstrap.css}"
+        rel="stylesheet">
+  <script src="webjars/bootstrap/4.4.1/js/bootstrap.js" th:src="@{/webjars/bootstrap/__#{bootstrap.version}__/js/bootstrap.js}"></script>
+</head>
+<body>
+<p th:text="'Hello, ' + ${name} + '!'"/>
+</body>
+</html>

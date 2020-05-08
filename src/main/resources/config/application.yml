@@ -1,0 +1,71 @@
+#
+# jSMPP web
+#
+
+#
+# The REST API server
+#
+server:
+  port: 8000
+
+# Spring Framework
+spring:
+  application:
+    name: SMPP Web
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  datasource:
+#     url: jdbc:h2:file:/tmp/h2/ota
+#     url: jdbc:h2:mem:ota;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:ota
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    database: h2
+    show-sql: false
+    hibernate:
+      dialect: org.hibernate.dialect.H2Dialect
+      ddl-auto: validate
+  flyway:
+    locations: "classpath:/db/migration/h2"
+
+logging:
+  level:
+    com.github.pmoerenhout: trace
+    org.flywaydb: trace
+    org.jsmpp: trace
+    org.jsmpp.bean.OptionalParameters: warn
+    org.springframework: info
+    org.springframework.security: info
+
+smpp:
+  connections:
+    -
+      id: local_host_modem
+      context-id: test_ctrx
+      description: This is the connection (TRX) to localhost:2075
+      enabled: true
+      service-type: CMT
+      charset: CCPGSM
+      host: localhost
+      port: 2075
+      system-id: sys1
+      password: secret
+      system-type: CGL
+      bind-type: BIND_TRX
+      bind-timeout: 5000
+      enquire-link-timer: 300000
+      transaction-timer: 60000
+      pdu-processor-degree: 5
+      long-sms-enabled: true
+      long-sms-max-size: 1600
+
+api:
+  users:
+    # https://www.dailycred.com/article/bcrypt-calculator
+    - username: theonlyone
+      # the password is secret
+      password: $2a$12$/.22G/o.gsWjU6kdFuhQremFOD3el2cKJKj44m0UxVs7Vcm.bDdWO
