@@ -162,7 +162,7 @@ public class WebController {
     final String message = SmppUtil.isBinary(d.getDataCodingScheme()) ?
         Util.bytesToHexString(d.getShortMessage()) :
         SmppUtil.decode(d.getDataCodingScheme(), d.getEsmClass(), d.getShortMessage(), SmppUtil.GSM_PACKED_CHARSET);
-    LOG.info("message: {}", message);
+    LOG.info("message: '{}'", Util.onlyPrintable(message.getBytes()));
     final String userDataHeader = GSMSpecificFeature.UDHI.containedIn(d.getEsmClass()) ?
         Util.bytesToHexString(ArrayUtils.subarray(d.getShortMessage(), 1, 1 + d.getShortMessage()[0]))
         : "";

@@ -3,6 +3,7 @@ package com.github.pmoerenhout.jsmpp.web.smpp;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -11,12 +12,20 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.jsmpp.InvalidResponseException;
 import org.jsmpp.PDUException;
+import org.jsmpp.bean.Address;
+import org.jsmpp.bean.Alphabet;
 import org.jsmpp.bean.DataCoding;
 import org.jsmpp.bean.ESMClass;
+import org.jsmpp.bean.GeneralDataCoding;
+import org.jsmpp.bean.MessageClass;
 import org.jsmpp.bean.NumberingPlanIndicator;
 import org.jsmpp.bean.OptionalParameter;
 import org.jsmpp.bean.RegisteredDelivery;
+import org.jsmpp.bean.ReplaceIfPresentFlag;
+import org.jsmpp.bean.SMSCDeliveryReceipt;
+import org.jsmpp.bean.SubmitMultiResult;
 import org.jsmpp.bean.TypeOfNumber;
+import org.jsmpp.bean.UnsuccessDelivery;
 import org.jsmpp.extra.NegativeResponseException;
 import org.jsmpp.extra.ResponseTimeoutException;
 import org.jsmpp.session.BindParameter;
@@ -24,6 +33,8 @@ import org.jsmpp.session.MessageReceiverListener;
 import org.jsmpp.session.SMPPSession;
 import org.jsmpp.session.SessionStateListener;
 import org.jsmpp.session.connection.socket.SocketConnectionFactory;
+import org.jsmpp.util.AbsoluteTimeFormatter;
+import org.jsmpp.util.TimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +56,7 @@ import com.github.pmoerenhout.jsmpp.web.sms.SmsService;
 public class SmppClientService implements ApplicationContextAware {
 
   private static final Logger LOG = LoggerFactory.getLogger(SmppClientService.class);
+  private static final TimeFormatter TIME_FORMATTER = new AbsoluteTimeFormatter();
 
   private ApplicationContext applicationContext;
 
@@ -88,7 +100,7 @@ public class SmppClientService implements ApplicationContextAware {
         final String description = smppConnection.getDescription();
         final String serviceType = smppConnection.getServiceType();
         final Charset defaultCharset = smppConnection.getCharset();
-        final boolean transmitable = smppConnection.getBindType().isTransmitable();
+        final boolean transmittable = smppConnection.getBindType().isTransmittable();
         final boolean longSmsEnabled = smppConnection.isLongSmsEnabled();
         final int longSmsMaxSize = smppConnection.getLongSmsMaxSize();
         final Integer singleSmsMaxSize = smppConnection.getSingleSmsMaxSize();
@@ -106,12 +118,15 @@ public class SmppClientService implements ApplicationContextAware {
                 smppConnection.getPassword(),
                 smppConnection.getSystemType(), TypeOfNumber.UNKNOWN, NumberingPlanIndicator.UNKNOWN, ""));
 
-        final Connection connection = new Connection(connectionId, contextId, description, serviceType, defaultCharset, transmitable,
+        final Connection connection = new Connection(connectionId, contextId, description, serviceType, defaultCharset, transmittable,
             longSmsEnabled, longSmsMaxSize, singleSmsMaxSize, session);
         pooledSmppSessions.put(connectionId, connection);
+
+        sendSubmitMulti(connectionId);
+
         LOG.info(
-            "Created pooled SMPP session for connection '{}' '{}' ({}) with serviceType {}, charset {}, transmitable {}, longSms:{} {}, sms size {}",
-            connectionId, contextId, description, serviceType, defaultCharset, transmitable, longSmsEnabled, longSmsMaxSize, singleSmsMaxSize);
+            "Created pooled SMPP session for connection '{}' '{}' ({}) with serviceType {}, charset {}, transmittable {}, longSms:{} {}, sms size {}",
+            connectionId, contextId, description, serviceType, defaultCharset, transmittable, longSmsEnabled, longSmsMaxSize, singleSmsMaxSize);
       } catch (Exception e) {
         LOG.error("Could not create the SMPP session with connection '" + connectionId + "' to " + smppConnection.getHost() + ':' + smppConnection.getPort(),
             e);
@@ -157,6 +172,45 @@ public class SmppClientService implements ApplicationContextAware {
             optionalParameters);
         LOG.debug("Submitted message ID {} on session {}", messageId, smppSession.getSessionId());
         return messageId;
+      } catch (ResponseTimeoutException e) {
+        LOG.error("Response timeout: {}", e.getMessage());
+      } catch (NegativeResponseException e) {
+        LOG.error("Negative response: {}", e.getMessage());
+      } catch (InvalidResponseException e) {
+        LOG.error("Invalid response: {}", e.getMessage());
+      } catch (PDUException e) {
+        LOG.error("PDU exception: {}", e.getMessage());
+      } catch (IOException e) {
+        LOG.error("IO exception: {}", e.getMessage());
+      } finally {
+      }
+    } catch (Exception ee) {
+      LOG.error("Error in pool", ee);
+    }
+    return null;
+  }
+
+  public String sendSubmitMulti(final String connectionId) throws Exception {
+    final Connection connection = pooledSmppSessions.get(connectionId);
+    final SMPPSession smppSession = connection.getSession();
+    try {
+      try {
+
+        Address address1 = new Address(TypeOfNumber.INTERNATIONAL, NumberingPlanIndicator.UNKNOWN, "628176504657");
+        Address address2 = new Address(TypeOfNumber.INTERNATIONAL, NumberingPlanIndicator.UNKNOWN, "628176504658");
+        Address[] addresses = new Address[] {address1, address2};
+
+        SubmitMultiResult result = smppSession.submitMultiple("CMT", TypeOfNumber.INTERNATIONAL, NumberingPlanIndicator.UNKNOWN, "1616",
+            addresses, new ESMClass(), (byte)0, (byte)1, TIME_FORMATTER.format(new Date()), null,
+            new RegisteredDelivery(SMSCDeliveryReceipt.FAILURE), ReplaceIfPresentFlag.REPLACE,
+            new GeneralDataCoding(Alphabet.ALPHA_DEFAULT, MessageClass.CLASS1, false), (byte)0,
+            "jSMPP simplifies SMPP on Java platform".getBytes());
+        LOG.info("{} messages submitted, result message id {}", addresses.length, result.getMessageId());
+        for (UnsuccessDelivery unsuccessDelivery: result.getUnsuccessDeliveries()){
+          LOG.info("Unsuccessful delivery to {}: {}", unsuccessDelivery.getDestinationAddress(), unsuccessDelivery.getErrorStatusCode());
+        }
+
+        return "73746567346573249";
       } catch (ResponseTimeoutException e) {
         LOG.error("Response timeout: {}", e.getMessage());
       } catch (NegativeResponseException e) {

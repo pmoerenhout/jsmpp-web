@@ -123,18 +123,21 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
         }
 
         SmppUtil.logOptionalParameters(deliverSm.getOptionalParameters(), " ");
-
-        final String smscAddress = ((OptionalParameter.OctetString) deliverSm.getOptionalParameter((short) 8193)).getValueAsString();
+        final String smscAddress = deliverSm.getOptionalParameter((short) 8193) != null ?
+            ((OptionalParameter.OctetString) deliverSm.getOptionalParameter((short) 8193)).getValueAsString() :
+            null;
         final byte smscAddressTon = getOptionalByte(deliverSm.getOptionalParameter((short) 8194));
         final byte smscAddressNpi = getOptionalByte(deliverSm.getOptionalParameter((short) 8195));
         final String smscTimestamp = getOptionalOctetString(deliverSm.getOptionalParameter((short) 8196));
 
         final byte[] pduRaw = getOptionalByteArray(deliverSm.getOptionalParameter((short) 8200));
-        PduParser pduParser = new PduParser();
-        LOG.info("HEX: '{}'", Util.bytesToHexString(pduRaw));
-        Pdu pdu = pduParser.parsePdu(Util.bytesToHexString(pduRaw));
-        if (pdu instanceof SmsDeliveryPdu){
-          LOG.info("SCTS: {}", ((SmsDeliveryPdu)pdu).getServiceCentreTimestamp());
+        if (pduRaw != null) {
+          PduParser pduParser = new PduParser();
+          LOG.info("HEX: '{}'", Util.bytesToHexString(pduRaw));
+          Pdu pdu = pduParser.parsePdu(Util.bytesToHexString(pduRaw));
+          if (pdu instanceof SmsDeliveryPdu) {
+            LOG.trace("SCTS: {}", ((SmsDeliveryPdu) pdu).getServiceCentreTimestamp());
+          }
         }
 
         // final String messageId = deliverSm.getId();
@@ -163,7 +166,6 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
         sm.setSmscAddressNpi(smscAddressNpi);
 
         if (StringUtils.isNoneBlank(smscTimestamp)) {
-          LOG.info("SCTS: {}", ZonedDateTime.parse(smscTimestamp, DateTimeFormatter.ISO_OFFSET_DATE_TIME));
           sm.setSmscTimestamp(ZonedDateTime.parse(smscTimestamp, DateTimeFormatter.ISO_OFFSET_DATE_TIME));
         }
 
@@ -193,6 +195,9 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
   private byte getOptionalByte(final OptionalParameter optionalParameter) {
     // jSMPP will give as Octet String
     final OptionalParameter.OctetString octetString = (OptionalParameter.OctetString) optionalParameter;
+    if (octetString == null) {
+      return 0x00;
+    }
     final byte[] value = octetString.getValue();
     if (value.length != 1) {
       throw new IllegalArgumentException("The optional parameter " + optionalParameter.tag + " has invalid contents for Byte");
@@ -202,7 +207,7 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
 
   private String getOptionalOctetString(final OptionalParameter optionalParameter) {
     // jSMPP will give as Octet String
-    if (optionalParameter == null){
+    if (optionalParameter == null) {
       return null;
     }
     return ((OptionalParameter.OctetString) optionalParameter).getValueAsString();
@@ -210,7 +215,7 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
 
   private byte[] getOptionalByteArray(final OptionalParameter optionalParameter) {
     // jSMPP will give as Octet String
-    if (optionalParameter == null){
+    if (optionalParameter == null) {
       return null;
     }
     return ((OptionalParameter.OctetString) optionalParameter).getValue();

@@ -1,6 +1,7 @@
 package com.github.pmoerenhout.jsmpp.web.sms.util;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Random;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -362,6 +363,23 @@ public class SmsUtil {
     } else {
       return 1 + ((length - (udhl == 0 ? 2 : 1)) / 134);
     }
+  }
+
+  public static int fillBits(final int udhSize) {
+    final int reminder = (udhSize % 7);
+    if (reminder != 0) {
+      return 7 - reminder;
+    }
+    return 0;
+  }
+
+  public static byte[] removeFillBits(final byte[] data, final int fillBits) {
+    final BitSet dataBitSet = BitSet.valueOf(data);
+    final BitSet bs = new BitSet(data.length * 8 - fillBits);
+    for (int i = 0; i < (data.length * 8 - fillBits); i++) {
+      bs.set(i, dataBitSet.get(i + fillBits));
+    }
+    return bs.toByteArray();
   }
 
 }

@@ -34,7 +34,7 @@ spring:
 
 logging:
   level:
-    com.github.pmoerenhout: trace
+    com.github.pmoerenhout: debug
     org.flywaydb: trace
     org.jsmpp: trace
     org.jsmpp.bean.OptionalParameters: warn
