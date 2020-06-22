@@ -122,27 +122,6 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
               decodedMessage);
         }
 
-        SmppUtil.logOptionalParameters(deliverSm.getOptionalParameters(), " ");
-        final String smscAddress = deliverSm.getOptionalParameter((short) 8193) != null ?
-            ((OptionalParameter.OctetString) deliverSm.getOptionalParameter((short) 8193)).getValueAsString() :
-            null;
-        final byte smscAddressTon = getOptionalByte(deliverSm.getOptionalParameter((short) 8194));
-        final byte smscAddressNpi = getOptionalByte(deliverSm.getOptionalParameter((short) 8195));
-        final String smscTimestamp = getOptionalOctetString(deliverSm.getOptionalParameter((short) 8196));
-
-        final byte[] pduRaw = getOptionalByteArray(deliverSm.getOptionalParameter((short) 8200));
-        if (pduRaw != null) {
-          PduParser pduParser = new PduParser();
-          LOG.info("HEX: '{}'", Util.bytesToHexString(pduRaw));
-          Pdu pdu = pduParser.parsePdu(Util.bytesToHexString(pduRaw));
-          if (pdu instanceof SmsDeliveryPdu) {
-            LOG.trace("SCTS: {}", ((SmsDeliveryPdu) pdu).getServiceCentreTimestamp());
-          }
-        }
-
-        // final String messageId = deliverSm.getId();
-        // final String msisdn = deliverSm.getSourceAddr();
-
         // ShortMessage sm = new ShortMessage();
         final SmIn sm = new SmIn();
         sm.setTimestamp(Instant.now());
@@ -157,19 +136,44 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
         sm.setProtocolIdentifier(deliverSm.getProtocolId());
         sm.setEsmClass(deliverSm.getEsmClass());
         sm.setPriorityFlag(deliverSm.getPriorityFlag());
-        sm.setValidityPeriod(deliverSm.getValidityPeriod());
-        sm.setScheduled(deliverSm.getScheduleDeliveryTime());
+//        sm.setValidityPeriod(deliverSm.getValidityPeriod());
+//        sm.setScheduled(deliverSm.getScheduleDeliveryTime());
         sm.setReplaceIfPresentFlag(deliverSm.getReplaceIfPresent());
-        // Optional
-        sm.setSmscAddress(smscAddress);
-        sm.setSmscAddressTon(smscAddressTon);
-        sm.setSmscAddressNpi(smscAddressNpi);
 
+        SmppUtil.logOptionalParameters(deliverSm.getOptionalParameters(), " ");
+        final OptionalParameter optionalParameterSmscAddress = deliverSm.getOptionalParameter(SmppCustomOptionalParameters.OPTIONAL_TAG_SMSC_ADDRESS);
+        if (optionalParameterSmscAddress != null) {
+          // Optional
+          sm.setSmscAddress(((OptionalParameter.OctetString) optionalParameterSmscAddress).getValueAsString());
+          sm.setSmscAddressTon(getOptionalByte(deliverSm.getOptionalParameter(SmppCustomOptionalParameters.OPTIONAL_TAG_SMSC_ADDRESS_TON)));
+          sm.setSmscAddressNpi(getOptionalByte(deliverSm.getOptionalParameter(SmppCustomOptionalParameters.OPTIONAL_TAG_SMSC_ADDRESS_NPI)));
+        }
+        final String smscTimestamp = getOptionalOctetString(deliverSm.getOptionalParameter(SmppCustomOptionalParameters.OPTIONAL_TAG_SERVICE_CENTRE_TIMESTAMP));
+
+        final byte[] pduRaw = getOptionalByteArray(deliverSm.getOptionalParameter(SmppCustomOptionalParameters.OPTIONAL_TAG_PDU));
+        if (pduRaw != null) {
+          PduParser pduParser = new PduParser();
+          LOG.info("HEX: '{}'", Util.bytesToHexString(pduRaw));
+          Pdu pdu = pduParser.parsePdu(Util.bytesToHexString(pduRaw));
+          if (pdu instanceof SmsDeliveryPdu) {
+            LOG.trace("SCTS: {}", ((SmsDeliveryPdu) pdu).getServiceCentreTimestamp());
+          }
+        }
+        // Service Centre Timestamp (SCTS)
         if (StringUtils.isNoneBlank(smscTimestamp)) {
           sm.setSmscTimestamp(ZonedDateTime.parse(smscTimestamp, DateTimeFormatter.ISO_OFFSET_DATE_TIME));
         }
 
+        // The connectionID of the ESME context (jsmpp-modem)
+        sm.setConnectionId(getOptionalOctetString(deliverSm.getOptionalParameter(SmppCustomOptionalParameters.OPTIONAL_TAG_CONNECTION_ID)));
+
         sm.setShortMessage(message);
+        if (smsService.findSmIn(sm).isPresent()) {
+          final String displayMessage = SmppUtil.decode(sm.getDataCodingScheme(), sm.getEsmClass(), sm.getShortMessage());
+          LOG.info("Message '{}' already exists in database", displayMessage);
+          return;
+        }
+
         final SmIn saved = smsService.saveSmIn(sm);
 
         final Long id = saved.getId();

@@ -45,7 +45,7 @@ public class WebController {
 
   private static final Logger LOG = LoggerFactory.getLogger(WebController.class);
 
-  private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss");
+  private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   @Autowired
   private DrRepository drRepository;
@@ -56,12 +56,11 @@ public class WebController {
 
   @RequestMapping(value = "/", method = RequestMethod.GET)
   public String getHome(final Authentication authentication, final ModelMap modelMap, final HttpServletRequest request) {
-    LOG.info("Home");
     modelMap.addAttribute("name", authentication.getPrincipal());
     return "home";
   }
 
-  @RequestMapping(value = "/sms", method = RequestMethod.GET)
+  @RequestMapping(value = "/show", method = RequestMethod.GET)
   public String getRepository(final Authentication authentication, final ModelMap modelMap, final HttpServletRequest request) {
     final List<SmIn> smIns = smInRepository.findAll(Sort.by(Sort.Direction.DESC, "smscTimestamp"));
     final List<DeliverWebDto> delivers = new ArrayList<>();
@@ -83,8 +82,9 @@ public class WebController {
               d.isMoreMessagesToSend(), GSMSpecificFeature.UDHI.containedIn(d.getEsmClass()), GSMSpecificFeature.REPLYPATH.containedIn(d.getEsmClass()),
               userDataHeader, message));
     });
+    modelMap.addAttribute("msisdn", "+31682346962");
     modelMap.addAttribute("sms", delivers);
-    return "sms";
+    return "show";
   }
 
   @MessageMapping("/hello")

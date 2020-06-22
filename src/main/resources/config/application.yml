@@ -45,7 +45,7 @@ smpp:
   connections:
     -
       id: local_host_modem
-      context-id: test_ctrx
+      context-id: test_ctx
       description: This is the connection (TRX) to localhost:2075
       enabled: true
       service-type: CMT
@@ -57,11 +57,16 @@ smpp:
       system-type: CGL
       bind-type: BIND_TRX
       bind-timeout: 5000
-      enquire-link-timer: 300000
-      transaction-timer: 60000
-      pdu-processor-degree: 5
+      enquire-link-timer: 15000
+      transaction-timer: 5000
+      pdu-processor-degree: 2
       long-sms-enabled: true
       long-sms-max-size: 1600
+      pool-max-total: 1
+      pool-min-idle: 1
+      pool-max-idle: 1
+      pool-rate: 100
+      max-concurrent-requests: 25
 
 api:
   users:
@@ -69,3 +74,45 @@ api:
     - username: theonlyone
       # the password is secret
       password: $2a$12$/.22G/o.gsWjU6kdFuhQremFOD3el2cKJKj44m0UxVs7Vcm.bDdWO
+
+---
+
+spring:
+  profiles: tomcat
+
+logging:
+  pattern:
+    console: ''
+  file:
+    name: /var/log/tomcat/jsmpp-web.log
+  level: debug
+
+smpp:
+  connections:
+    -
+      id: weidebloemen_modem
+      context-id: weidebloemen_ctx
+      description: This is the connection (TRX) to localhost:2075
+      enabled: true
+      service-type: CMT
+      charset: CCPGSM
+      host: 83.83.231.89
+      port: 2075
+      system-id: sys1
+      password: secret
+      system-type: CGL
+      bind-type: BIND_TRX
+      bind-timeout: 5000
+      enquire-link-timer: 60000
+      transaction-timer: 5000
+      pdu-processor-degree: 2
+      long-sms-enabled: true
+      long-sms-max-size: 1600
+      pool-max-total: 2
+      pool-min-idle: 1
+      pool-max-idle: 2
+      pool-rate: 100
+      max-concurrent-requests: 25
+
+server:
+  forward-headers-strategy: native

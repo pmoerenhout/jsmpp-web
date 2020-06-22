@@ -2,7 +2,7 @@ package com.github.pmoerenhout.jsmpp.web.smpp;
 
 import java.nio.charset.Charset;
 
-import org.jsmpp.session.SMPPSession;
+import com.github.pmoerenhout.jsmpp.pool.PooledSMPPSession;
 
 public final class Connection {
 
@@ -15,12 +15,12 @@ public final class Connection {
   private boolean longSmsEnabled;
   private int longSmsMaxSize;
   private Integer singleSmsMaxSize;
-  private SMPPSession session;
+  private PooledSMPPSession pooledSMPPSession;
 
   public Connection(final String id, final String contextId, final String description, final String serviceType, final Charset charset,
                     final boolean transmitable, final boolean longSmsEnabled,
                     final int longSmsMaxSize, final Integer singleSmsMaxSize,
-                    final SMPPSession session) {
+                    final PooledSMPPSession pooledSMPPSession) {
     this.id = id;
     this.contextId = contextId;
     this.description = description;
@@ -30,7 +30,7 @@ public final class Connection {
     this.longSmsEnabled = longSmsEnabled;
     this.longSmsMaxSize = longSmsMaxSize;
     this.singleSmsMaxSize = singleSmsMaxSize;
-    this.session = session;
+    this.pooledSMPPSession = pooledSMPPSession;
   }
 
   public String getId() {
@@ -57,8 +57,8 @@ public final class Connection {
     return transmitable;
   }
 
-  public SMPPSession getSession() {
-    return session;
+  public PooledSMPPSession getPooledSMPPSession() {
+    return pooledSMPPSession;
   }
 
   public boolean isLongSmsEnabled() {
@@ -85,7 +85,7 @@ public final class Connection {
     sb.append(", longSmsEnabled=").append(longSmsEnabled);
     sb.append(", longSmsMaxSize=").append(longSmsMaxSize);
     sb.append(", singleSmsMaxSize=").append(singleSmsMaxSize);
-    sb.append(", session=").append(session);
+    sb.append(", pooledSMPPSession=").append(pooledSMPPSession);
     sb.append('}');
     return sb.toString();
   }

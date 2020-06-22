@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>SMS</title>
+  <title>Show received SMS</title>
   <meta content="text/html; charset=UTF-8" http-equiv="Content-Type"/>
   <link href="webjars/bootstrap/4.4.1/css/bootstrap.css" rel="stylesheet"
         th:href="@{/webjars/bootstrap/__#{bootstrap.version}__/css/bootstrap.css}">
@@ -10,22 +10,41 @@
   <script src="webjars/jquery/3.5.1/jquery.js" th:src="@{/webjars/jquery/__#{jquery.version}__/jquery.js}"></script>
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.1/umd/popper.min.js"></script>
   <script src="webjars/bootstrap/4.4.1/js/bootstrap.js" th:src="@{/webjars/bootstrap/__#{bootstrap.version}__/js/bootstrap.js}"></script>
-  <script src="/webjars/sockjs-client/sockjs.min.js"></script>
-  <script src="/webjars/stomp-websocket/stomp.min.js"></script>
-  <script src="/app.js"></script>
+  <script src="/webjars/sockjs-client/sockjs.min.js" th:src="@{/webjars/sockjs-client/sockjs.min.js}"></script>
+  <script src="/webjars/stomp-websocket/stomp.min.js" th:src="@{/webjars/stomp-websocket/stomp.min.js}"></script>
+  <script src="/app.js" th:src="@{/app.js}"></script>
+
+  <link rel="apple-touch-icon" sizes="57x57" th:href="@{/apple-icon-57x57.png}">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
+  <link rel="icon" type="image/png" sizes="192x192"  th:href="@{/android-icon-192x192.png}">
+  <link rel="icon" type="image/png" sizes="32x32" th:href="@{/favicon-32x32.png}">
+  <link rel="icon" type="image/png" sizes="96x96" th:href="@{/favicon-96x96.png}">
+  <link rel="icon" type="image/png" sizes="16x16" th:href="@{/favicon-16x16.png}">
+  <link rel="manifest" th:href="@{/manifest.json}">
+  <meta name="msapplication-TileColor" content="#ffffff">
+  <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+  <meta name="theme-color" content="#ffffff">
+
 </head>
 <body>
 <div class="container-fluid">
 
   <div class="jumbotron">
-    <h1 class="display-4">Welcome to the SMS displayer!</h1>
-    <p class="lead">Send an SMS to +31682346962 and it will be displayed here with all it's details.</p>
-    <hr class="my-4">
+    <h2 class="display-3">Welcome to the SMS displayer!</h2>
+    <p class="lead">Send an SMS to <a th:href="${'sms:'+msisdn}" th:text="${msisdn}"></a> and it will be displayed here with all it's details.</p>
+    <hr class="my-1">
     <a class="btn btn-primary btn-lg" href="https://intermediair2.aegon.nl/" role="button">Learn more</a>
   </div>
 
   <table class="table table-sm table-striped" id="sms" name="sms">
-    <caption>List of SMS</caption>
+    <caption style="caption-side: top">List of delivered SMS</caption>
     <tr>
       <th>Timestamp</th>
       <th>SMSC</th>
@@ -50,7 +69,7 @@
       <td>
         <span class="far" th:classappend="${sm.isReplyPath() ? 'fa-check-square text-success' : 'fa-square text-danger'}"></span>
       </td>
-      <td th:text="${T(com.github.pmoerenhout.jsmpp.web.Util).bytesToHexString(sm.getDataCodingScheme())}"  ></td>
+      <td th:text="${T(com.github.pmoerenhout.jsmpp.web.Util).bytesToHexString(sm.getDataCodingScheme())}"></td>
       <td th:text="${T(com.github.pmoerenhout.jsmpp.web.Util).bytesToHexString(sm.getProtocolId())}"></td>
       <td th:text="${sm.getOriginatorAddress()}"></td>
       <td th:text="${sm.getUserDataHeader()}"></td>

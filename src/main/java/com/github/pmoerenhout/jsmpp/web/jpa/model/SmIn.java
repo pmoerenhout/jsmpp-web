@@ -80,14 +80,6 @@ public class SmIn implements Serializable {
   @JsonProperty
   private byte priorityFlag;
 
-  @Column(name = "scheduled", updatable = false)
-  @JsonProperty
-  private String scheduled;
-
-  @Column(name = "validityperiod", updatable = false)
-  @JsonProperty
-  private String validityPeriod;
-
   @Column(name = "replaceifpresent", updatable = false)
   @JsonProperty
   private byte replaceIfPresentFlag;
@@ -228,22 +220,6 @@ public class SmIn implements Serializable {
     this.priorityFlag = priorityFlag;
   }
 
-  public String getScheduled() {
-    return scheduled;
-  }
-
-  public void setScheduled(final String scheduled) {
-    this.scheduled = scheduled;
-  }
-
-  public String getValidityPeriod() {
-    return validityPeriod;
-  }
-
-  public void setValidityPeriod(final String validityPeriod) {
-    this.validityPeriod = validityPeriod;
-  }
-
   public byte getReplaceIfPresentFlag() {
     return replaceIfPresentFlag;
   }
@@ -326,8 +302,6 @@ public class SmIn implements Serializable {
     sb.append(", dataCodingScheme=").append(dataCodingScheme);
     sb.append(", protocolIdentifier=").append(protocolIdentifier);
     sb.append(", priorityFlag=").append(priorityFlag);
-    sb.append(", scheduled='").append(scheduled).append('\'');
-    sb.append(", validityPeriod='").append(validityPeriod).append('\'');
     sb.append(", replaceIfPresentFlag=").append(replaceIfPresentFlag);
     sb.append(", shortMessage=");
     if (shortMessage == null) {

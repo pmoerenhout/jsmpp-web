@@ -26,5 +26,7 @@ public class SessionStateListenerImpl implements SessionStateListener {
 
   public void onStateChange(final SessionState newState, final SessionState oldState, final Session session) {
     LOG.info("Session {} state change from {} to {}", session.getSessionId(), oldState, newState);
+    LOG.info("Session {}", session.getClass().getName());
+
   }
 }

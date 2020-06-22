@@ -1,5 +1,6 @@
 package com.github.pmoerenhout.jsmpp.web.jpa.repository;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -13,6 +14,12 @@ import com.github.pmoerenhout.jsmpp.web.jpa.model.SmIn;
 
 @Repository
 public interface SmInRepository extends JpaRepository<SmIn, Long> {
+
+  List<SmIn> findBySmscTimestampAndSourceAndDestinationAndShortMessage(
+      @Param("smscTimestamp") ZonedDateTime smscTimestamp,
+      @Param("source") String source,
+      @Param("destination") String destination,
+      @Param("shortMessage") byte[] shortMessage);
 
   SmIn findOneByMessageIdOrderByTimestampDesc(@Param("messageId") String messageId);
 

@@ -2,6 +2,7 @@ package com.github.pmoerenhout.jsmpp.web.sms;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.jsmpp.bean.DeliverSm;
@@ -28,6 +29,7 @@ import com.github.pmoerenhout.jsmpp.web.jpa.repository.DrRepository;
 import com.github.pmoerenhout.jsmpp.web.jpa.repository.SmInRepository;
 import com.github.pmoerenhout.jsmpp.web.jpa.repository.SmOutRepository;
 import com.github.pmoerenhout.jsmpp.web.smpp.SmppClientService;
+import com.github.pmoerenhout.jsmpp.web.smpp.util.SmppUtil;
 import com.github.pmoerenhout.jsmpp.web.sms.util.model.ShortMessage;
 
 @Service
@@ -120,6 +122,24 @@ public class SmsService {
     smIn.setSmscAddress(shortMessage.getSmscAddress());
     return smInRepository.save(smIn);
   }
+
+  public Optional<SmIn> findSmIn(final SmIn smIn) {
+    List<SmIn> list = smInRepository.findBySmscTimestampAndSourceAndDestinationAndShortMessage(
+        smIn.getSmscTimestamp(), smIn.getSource(),
+        smIn.getDestination(),
+        smIn.getShortMessage());
+    smInRepository.findAll().stream().forEach(r -> {
+      final String message = SmppUtil.decode(r.getDataCodingScheme(), r.getEsmClass(), r.getShortMessage(), SmppUtil.GSM_PACKED_CHARSET);
+      LOG.debug("Record {}: {} {}", r.getId(), r.getSmscTimestamp(), message);
+    });
+    if (list.size() == 0) {
+      return Optional.empty();
+    } else if (list.size() == 1) {
+      return Optional.of(smIn);
+    }
+    throw new IllegalStateException("Too many records found");
+  }
+
   public SmIn saveSmIn(final SmIn smIn) {
     return smInRepository.save(smIn);
   }

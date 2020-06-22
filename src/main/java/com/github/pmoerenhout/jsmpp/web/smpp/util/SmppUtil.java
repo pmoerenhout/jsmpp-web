@@ -49,37 +49,43 @@ public class SmppUtil {
     switch (alphabet) {
       case ALPHA_DEFAULT:
         if (defaultCharset == GSM_PACKED_CHARSET) {
-          final int udhLength = ud[0] + 1;
-          final byte[] udWithoutFill = (udhi ? removeFillBits(ArrayUtils.subarray(ud, udhLength, ud.length), fillBits(udhLength)) : ud);
-          if (log.isTraceEnabled()) {
-            log.trace("UD WITHOUT FILL: {}", Util.bytesToHexString(udWithoutFill));
+          if (udhi) {
+            final int udhLength = ud[0] + 1;
+            final byte[] udWithoutFill = removeFillBits(ArrayUtils.subarray(ud, udhLength, ud.length), fillBits(udhLength));
+            if (log.isTraceEnabled()) {
+              log.trace("UD WITHOUT FILL: {}", Util.bytesToHexString(udWithoutFill));
+            }
+            return new String(udWithoutFill, defaultCharset);
           }
-          return new String(udWithoutFill, defaultCharset);
         }
-        return new String(ud, defaultCharset);
+        return new String(getUserDataWithoutHeader(udhi,ud), defaultCharset);
+      case ALPHA_8_BIT:
+        return Util.bytesToHexString(getUserDataWithoutHeader(udhi,ud));
       case ALPHA_IA5:
-        return new String(ud, ASCII_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi,ud), ASCII_CHARSET);
       case ALPHA_LATIN1:
-        return new String(ud, LATIN_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi,ud), LATIN_CHARSET);
       case ALPHA_JIS:
-        return new String(ud, JIS_X0208_1990_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi,ud), JIS_X0208_1990_CHARSET);
       case ALPHA_CYRILLIC:
-        return new String(ud, LATIN_CYRILLIC_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi,ud), LATIN_CYRILLIC_CHARSET);
       case ALPHA_LATIN_HEBREW:
-        return new String(ud, LATIN_HEBREW_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi,ud), LATIN_HEBREW_CHARSET);
       case ALPHA_UCS2:
-        return new String(ud, UCS2_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi,ud), UCS2_CHARSET);
       case ALPHA_JIS_X_0212_1990:
-        return new String(ud, JIS_X0212_1990_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi,ud), JIS_X0212_1990_CHARSET);
     }
-    throw new IllegalArgumentException("Unknown alphabet for SMPP DCS " + Util.bytesToHexString(dcs) + ": " + alphabet);
+    log.warn("Unknown alphabet for SMPP DCS {}: {}", Util.bytesToHexString(dcs), alphabet);
+    return Util.bytesToHexString(getUserDataWithoutHeader(udhi,ud));
+    // throw new IllegalArgumentException("Unknown alphabet for SMPP DCS " + Util.bytesToHexString(dcs) + ": " + alphabet);
   }
 
   /*
-   ** Decode with SMSC default alphabet GSM charset
+   ** Decode with SMSC default alphabet GSM charset packed
    */
   public static String decode(final byte dcs, final byte esmClass, final byte[] data) {
-    return decode(dcs, esmClass, data, GSM_CHARSET);
+    return decode(dcs, esmClass, data, GSM_PACKED_CHARSET);
   }
 
   public static String decode(final byte dcs, final byte esmClass, final byte[] ud, final Charset defaultCharset) {
@@ -243,5 +249,12 @@ public class SmppUtil {
     return shortMessage.length != 0 ? shortMessage : (messagePayload != null ? messagePayload.getValue() : new byte[]{});
   }
 
+  private static byte[] getUserDataWithoutHeader(final boolean udhi, final byte[] ud) {
+    if (udhi) {
+      final int udhLength = ud[0] + 1;
+      return ArrayUtils.subarray(ud, udhLength, ud.length);
+    }
+    return ud;
+  }
 
 }
