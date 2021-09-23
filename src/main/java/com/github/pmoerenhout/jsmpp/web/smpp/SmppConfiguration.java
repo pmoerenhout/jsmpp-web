@@ -40,6 +40,7 @@ public class SmppConfiguration {
     private Charset charset;
     private String host;
     private int port;
+    private boolean ssl;
     private String systemId;
     private String password;
     private String systemType;
@@ -124,6 +125,14 @@ public class SmppConfiguration {
 
     public void setPort(final int port) {
       this.port = port;
+    }
+
+    public boolean isSsl() {
+      return ssl;
+    }
+
+    public void setSsl(final boolean ssl) {
+      this.ssl = ssl;
     }
 
     public String getSystemId() {

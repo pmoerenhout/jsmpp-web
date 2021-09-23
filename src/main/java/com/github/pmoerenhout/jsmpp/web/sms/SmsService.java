@@ -8,8 +8,6 @@ import java.util.UUID;
 import org.jsmpp.bean.DeliverSm;
 import org.jsmpp.bean.DeliveryReceipt;
 import org.jsmpp.bean.OptionalParameter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -29,12 +27,12 @@ import com.github.pmoerenhout.jsmpp.web.jpa.repository.DrRepository;
 import com.github.pmoerenhout.jsmpp.web.jpa.repository.SmInRepository;
 import com.github.pmoerenhout.jsmpp.web.jpa.repository.SmOutRepository;
 import com.github.pmoerenhout.jsmpp.web.smpp.SmppClientService;
-import com.github.pmoerenhout.jsmpp.web.smpp.util.SmppUtil;
 import com.github.pmoerenhout.jsmpp.web.sms.util.model.ShortMessage;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class SmsService {
-  private static final Logger LOG = LoggerFactory.getLogger(SmsService.class);
 
   private final static OptionalParameter[] NO_OPTIONAL_PARAMETERS = new OptionalParameter[]{};
 
@@ -51,7 +49,7 @@ public class SmsService {
 
   @Transactional(readOnly = true)
   public void showLastOrderByTimestamp(final int size) {
-    LOG.info("Show last {} entries", size);
+    log.info("Show last {} entries", size);
     final PageRequest firstPage = PageRequest.of(0, size, Sort.by(Sort.Direction.DESC, "timestamp"));
 //    final PageRequest firstPage = new PageRequest(0, size,
 //        new Sort.Order(Sort.Direction.DESC, "timestamp")
@@ -61,12 +59,12 @@ public class SmsService {
 //    );
     final Page<SmOut> smOuts = smOutRepository.findAll(firstPage);
     smOuts.forEach(o -> {
-      LOG.info("SM {}: user:{} conn:{} timestamp:{} src:{} dst:{} msgId:{}", o.getId(), o.getUser(), o.getConnectionId(), o.getTimestamp(), o.getSource(),
+      log.info("SM {}: user:{} conn:{} timestamp:{} src:{} dst:{} msgId:{}", o.getId(), o.getUser(), o.getConnectionId(), o.getTimestamp(), o.getSource(),
           o.getDestination(), o.getMessageId());
     });
     final Page<Dr> drs = drRepository.findAll(firstPage);
     drs.forEach(o -> {
-      LOG.info("DR {}: conn:{} timestamp:{} src:{} dst:{} msgId:{} status:{} error:{} text:{}", o.getId(), o.getConnectionId(), o.getTimestamp(), o.getSource(),
+      log.info("DR {}: conn:{} timestamp:{} src:{} dst:{} msgId:{} status:{} error:{} text:{}", o.getId(), o.getConnectionId(), o.getTimestamp(), o.getSource(),
           o.getDestination(), o.getMessageId(), Util.bytesToHexString(o.getState()), o.getError(), o.getText() != null ? new String(o.getText()) : "");
     });
   }
@@ -124,20 +122,20 @@ public class SmsService {
   }
 
   public Optional<SmIn> findSmIn(final SmIn smIn) {
-    List<SmIn> list = smInRepository.findBySmscTimestampAndSourceAndDestinationAndShortMessage(
+    final List<SmIn> list = smInRepository.findBySmscTimestampAndSourceAndDestinationAndShortMessage(
         smIn.getSmscTimestamp(), smIn.getSource(),
         smIn.getDestination(),
         smIn.getShortMessage());
-    smInRepository.findAll().stream().forEach(r -> {
-      final String message = SmppUtil.decode(r.getDataCodingScheme(), r.getEsmClass(), r.getShortMessage(), SmppUtil.GSM_PACKED_CHARSET);
-      LOG.debug("Record {}: {} {}", r.getId(), r.getSmscTimestamp(), message);
-    });
+//    smInRepository.findAll().stream().forEach(r -> {
+//      final String message = SmppUtil.decode(r.getDataCodingScheme(), r.getEsmClass(), r.getShortMessage(), SmppUtil.GSM_PACKED_CHARSET);
+//      LOG.debug("Record {}: {} {}", r.getId(), r.getSmscTimestamp(), message);
+//    });
     if (list.size() == 0) {
       return Optional.empty();
     } else if (list.size() == 1) {
       return Optional.of(smIn);
     }
-    throw new IllegalStateException("Too many records found");
+    throw new IllegalStateException("Too many records found for message " + Util.bytesToHexString(smIn.getShortMessage()));
   }
 
   public SmIn saveSmIn(final SmIn smIn) {
@@ -153,7 +151,7 @@ public class SmsService {
 
     final String messageId = deliveryReceipt.getId();
 
-    LOG.info("Received DeliveryReceiptEvent on connection '{}' for message id '{}' from {} to {}",
+    log.info("Received DeliveryReceiptEvent on connection '{}' for message id '{}' from {} to {}",
         connectionId, messageId, deliverSm.getSourceAddr(), deliverSm.getDestAddress());
 
     // showLastOrderByTimestamp(5);
@@ -176,7 +174,7 @@ public class SmsService {
     dr.setMessageId(messageId);
     dr.setDelivered((byte) (deliveryReceipt.getDelivered() & 0xff));
     dr.setSubmitted((byte) (deliveryReceipt.getSubmitted() & 0xff));
-    LOG.debug("Delivery receipt {} text is '{}'", messageId, deliveryReceipt.getText());
+    log.debug("Delivery receipt {} text is '{}'", messageId, deliveryReceipt.getText());
     if (deliveryReceipt.getText() != null) {
       dr.setText(deliveryReceipt.getText().getBytes());
     }
@@ -185,7 +183,7 @@ public class SmsService {
     dr.setError(deliveryReceipt.getError());
     dr.setState((byte) (deliveryReceipt.getFinalStatus().value() & 0xff));
     final Dr drSaved = drRepository.save(dr);
-    LOG.debug("Saved delivery receipt with id {} for {}", drSaved.getId(), deliverSm.getSourceAddr());
+    log.debug("Saved delivery receipt with id {} for {}", drSaved.getId(), deliverSm.getSourceAddr());
 
     final List<String> connectionIds = smppClientService.getConnectionsInSameContext(connectionId);
 

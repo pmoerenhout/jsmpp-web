@@ -1,19 +1,18 @@
 package com.github.pmoerenhout.jsmpp.web.socket;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-public class MyHandler extends TextWebSocketHandler {
+import lombok.extern.slf4j.Slf4j;
 
-  private static final Logger LOG = LoggerFactory.getLogger(MyHandler.class);
+@Slf4j
+public class MyHandler extends TextWebSocketHandler {
 
   @Override
   public void handleTextMessage(final WebSocketSession session, final TextMessage message) {
-    LOG.info("handleTextMessage {} {}", session, message);
-    LOG.info(" payload {}", message.getPayload());
+    log.info("handleTextMessage {} {}", session, message);
+    log.info(" payload {}", message.getPayload());
   }
 
 }

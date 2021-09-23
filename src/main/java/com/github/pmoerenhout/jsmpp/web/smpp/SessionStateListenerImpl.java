@@ -17,16 +17,13 @@ package com.github.pmoerenhout.jsmpp.web.smpp;
 import org.jsmpp.extra.SessionState;
 import org.jsmpp.session.Session;
 import org.jsmpp.session.SessionStateListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class SessionStateListenerImpl implements SessionStateListener {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SessionStateListenerImpl.class);
-
   public void onStateChange(final SessionState newState, final SessionState oldState, final Session session) {
-    LOG.info("Session {} state change from {} to {}", session.getSessionId(), oldState, newState);
-    LOG.info("Session {}", session.getClass().getName());
-
+    log.info("Session {} state change from {} to {}", session.getSessionId(), oldState, newState);
   }
 }

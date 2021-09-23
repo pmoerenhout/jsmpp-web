@@ -13,22 +13,37 @@ import org.jsmpp.bean.IndicationType;
 import org.jsmpp.bean.MessageClass;
 import org.jsmpp.bean.MessageWaitingDataCoding;
 import org.jsmpp.bean.SimpleDataCoding;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.github.pmoerenhout.jsmpp.web.Util;
 import com.github.pmoerenhout.jsmpp.web.exception.LongSmsException;
 import com.github.pmoerenhout.jsmpp.web.sms.util.model.ShortMessage;
 import com.github.pmoerenhout.jsmpp.web.sms.util.model.UserDataHeader;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class SmsUtil {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SmsUtil.class);
-
   private static final Random RANDOM = new Random();
   private static final int SMS_OCTECTS = 140;
+
+  public static int fillBits(final int udhSize) {
+    final int reminder = (udhSize % 7);
+    if (reminder != 0) {
+      return 7 - reminder;
+    }
+    return 0;
+  }
+
+  public static byte[] removeFillBits(final byte[] data, final int fillBits) {
+    final BitSet dataBitSet = BitSet.valueOf(data);
+    final BitSet bs = new BitSet(data.length * 8 - fillBits);
+    for (int i = 0; i < (data.length * 8 - fillBits); i++) {
+      bs.set(i, dataBitSet.get(i + fillBits));
+    }
+    return bs.toByteArray();
+  }
 
   public byte[] getUserData(final boolean udhi, final byte[] data) {
     if (udhi) {
@@ -44,15 +59,15 @@ public class SmsUtil {
                                                        final Integer singleSmsMaxSize)
       throws LongSmsException {
     if (longSmsEnabled) {
-      LOG.debug("Long sms is enabled with a maximum number of {} bytes", longSmsMaxSize);
+      log.debug("Long sms is enabled with a maximum number of {} bytes", longSmsMaxSize);
     } else {
       if (singleSmsMaxSize != null) {
-        LOG.debug("Long sms is disabled, maximum size per single sms is {}", singleSmsMaxSize);
+        log.debug("Long sms is disabled, maximum size per single sms is {}", singleSmsMaxSize);
       } else {
-        LOG.debug("Long sms is disabled");
+        log.debug("Long sms is disabled");
       }
     }
-    LOG.debug("Will the data be send as long SMS? {}", longSmsEnabled);
+    log.debug("Will the data be send as long SMS? {}", longSmsEnabled);
 
     return longSmsEnabled ?
         longSms(udhi, data, longSmsMaxSize) :
@@ -61,7 +76,7 @@ public class SmsUtil {
 
   public ShortMessage[] longSms(final boolean udhi, final byte[] data, final int maxSize)
       throws LongSmsException {
-    LOG.debug("Create LongSMS with UDH indicator:{} length:{} maxSize:{}", udhi, data.length, maxSize);
+    log.debug("Create LongSMS with UDH indicator:{} length:{} maxSize:{}", udhi, data.length, maxSize);
     final ESMClass esmClass = new ESMClass();
     if (udhi) {
       esmClass.setSpecificFeature(GSMSpecificFeature.UDHI);
@@ -79,195 +94,6 @@ public class SmsUtil {
 
   public ShortMessage[] split8bit(final boolean udhi, final byte[] data, final Integer singleSmsMaxSize) {
     return split8bit(RANDOM.nextInt(256), udhi, data, (singleSmsMaxSize != null ? singleSmsMaxSize.intValue() : SMS_OCTECTS));
-  }
-
-  // TODO: for text message, use char boundary
-  public ShortMessage[] split8bit(final int reference, final boolean udhi, final byte[] data, final int octets) {
-    LOG.debug("SMS user data header indicator: {}", udhi);
-    LOG.debug("SMS 8-bit reference: {}", Util.bytesToHexString((byte) (reference & 0xff)));
-    LOG.debug("SMS data: {} ({} bytes)", Util.bytesToHexString(data), data.length);
-    final ESMClass esmClass = new ESMClass();
-    int udhl = 0;
-    final byte[] udh;
-    final byte[] ud;
-    if (udhi) {
-      /* first byte is the header length remaining */
-      udhl = data[0] + 1;
-      udh = ArrayUtils.subarray(data, 0, udhl);
-      ud = ArrayUtils.subarray(data, udhl, data.length);
-    } else {
-      udh = new byte[]{};
-      ud = data.clone();
-    }
-    LOG.debug("DATA [" + String.format("%03d", data.length) + "]: "
-        + Util.bytesToHexString(data));
-    LOG.debug("UDH  ["
-        + String.format("%03d", udh.length) + "]: "
-        + Util.bytesToHexString(udh));
-    LOG.debug("UD   [" + String.format("%03d", ud.length) + "]: "
-        + Util.bytesToHexString(ud));
-
-    final ArrayList<ShortMessage> asm = new ArrayList<>();
-
-    int bytesDone = 0;
-    int part = 1;
-    int total = getTotalParts(udhl, data.length);
-
-    while (bytesDone < ud.length) {
-      final ShortMessage sm = new ShortMessage();
-      byte[] userDataHeaderBytes;
-      int availableBytes = (part == 1 && udhi ? octets - 5 - udh
-          .length : octets - 6);
-      int bytesToCopy = (ud.length - bytesDone > availableBytes ? availableBytes
-          : ud.length - bytesDone);
-      // LOG.debug("bytes to copy:" + bytesToCopy);
-      if (part == 1) {
-        userDataHeaderBytes = udh;
-        if (udhl > 0 || total > 1) {
-//            LOG.debug("FIRST PART MUST HAVE UDH, available:"
-//                + availableBytes + " bytes to copy:" + bytesToCopy);
-          esmClass.setSpecificFeature(GSMSpecificFeature.UDHI);
-        }
-      } else {
-        // next parts always have UDH for concatenation
-        userDataHeaderBytes = new byte[]{};
-        esmClass.setSpecificFeature(GSMSpecificFeature.UDHI);
-      }
-      if (total > 1) {
-        final UserDataHeader newUserDataHeader = new UserDataHeader();
-        newUserDataHeader.addInformationElementConcatenated((byte) (reference & (byte) 0xff), total, part);
-        if (part == 1 && udhi) {
-          newUserDataHeader.addHeader(ArrayUtils.subarray(udh, 1, udh[0] + 1));
-        }
-        userDataHeaderBytes = newUserDataHeader.getBytes();
-      }
-
-      final byte[] userDataBytes = new byte[bytesToCopy];
-      System.arraycopy(ud, bytesDone, userDataBytes, 0, bytesToCopy);
-
-      LOG.debug("[{}/{}] UDH:{} ({}) UD:{} ({}) UDHI:{}",
-          part, total,
-          Util.bytesToHexString(userDataHeaderBytes), userDataHeaderBytes.length,
-          Util.bytesToHexString(userDataBytes), userDataBytes.length,
-          GSMSpecificFeature.UDHI.containedIn(esmClass));
-      sm.setShortMessage(ArrayUtils.addAll(userDataHeaderBytes, userDataBytes));
-      sm.setEsmClass(esmClass.value());
-      asm.add(sm);
-      bytesDone += bytesToCopy;
-      part++;
-    }
-    return asm.toArray(new ShortMessage[asm.size()]);
-  }
-
-  public ShortMessage[] split8bitOK(final int reference, final boolean udhi, final byte[] data) {
-    LOG.debug("split8bit({},{},{})", reference, udhi, Util.bytesToHexString(data));
-    final ESMClass esmClass = new ESMClass();
-    if (udhi) {
-      esmClass.setSpecificFeature(GSMSpecificFeature.UDHI);
-    }
-    try {
-      int udhl = 0;
-      UserDataHeader udh;
-      byte[] ud;
-      if (udhi) {
-        /* first byte is the header length */
-        udhl = data[0];
-        udh = new UserDataHeader(ArrayUtils.subarray(data, 0, 1 + udhl));
-        ud = ArrayUtils.subarray(data, 1 + udhl, data.length);
-      } else {
-        /* create an empty user data header */
-        udh = new UserDataHeader();
-        ud = data.clone();
-      }
-      LOG.debug("DATA [{}]: {}", String.format("%03d", data.length), Util.bytesToHexString(data));
-      LOG.debug("UDH  [{}]: {}", String.format("%03d", udh.getBytes().length), Util.bytesToHexString(udh.getBytes()));
-      LOG.debug("UD   [{}]: {}", String.format("%03d", ud.length), Util.bytesToHexString(ud));
-
-      final ArrayList<ShortMessage> asm = new ArrayList<>();
-
-      int bytesDone = 0;
-      int part = 0;
-      while (bytesDone < ud.length) {
-        final ShortMessage sm = new ShortMessage();
-        byte[] userDataHeaderBytes;
-        int availableBytes = (part == 0 && udhi ? 140 - 5 - udh
-            .length() : 140 - 6);
-        int bytesToCopy = (ud.length - bytesDone > availableBytes ? availableBytes
-            : ud.length - bytesDone);
-        byte[] userDataBytes;
-
-        if (part == 0 && udhl > 0) {
-          LOG.debug("FIRST PART HAS OWN UDH, available: {} bytes to copy: {}", availableBytes, bytesToCopy);
-          userDataBytes = new byte[bytesToCopy];
-          userDataHeaderBytes = udh.getBytes();
-          esmClass.setSpecificFeature(GSMSpecificFeature.UDHI);
-        } else {
-          LOG.debug("bytes to copy: {}", bytesToCopy);
-          userDataBytes = new byte[bytesToCopy];
-          userDataHeaderBytes = new byte[]{}; //UserDataHeader().getBytes();
-          //sm.setUserDataHeaderIndicator(false);
-        }
-        System.arraycopy(ud, bytesDone, userDataBytes, 0, bytesToCopy);
-        //sm.setReference(reference);
-
-        LOG.debug("Adding UD: {} ({}) UDHI:{}"
-            , Util.bytesToHexString(userDataBytes),
-            userDataBytes.length,
-            GSMSpecificFeature.UDHI.containedIn(esmClass));
-        sm.setShortMessage(ArrayUtils.addAll(userDataHeaderBytes, userDataBytes));
-        sm.setEsmClass(esmClass.value());
-        asm.add(sm);
-        bytesDone += bytesToCopy;
-        part++;
-      }
-      LOG.debug("8-bit concatenated reference: 0x{}", Util.bytesToHexString((byte) (reference & (byte) 0xff)));
-      for (int j = 0; j < asm.size(); j++) {
-        ShortMessage sm = asm.get(j);
-        byte[] shortMessage = sm.getShortMessage();
-        // Split message into UDH and UD part
-        boolean udhiPart = GSMSpecificFeature.UDHI.containedIn(sm.getEsmClass());
-        byte[] smUdh = (j == 0 && udhiPart ? ArrayUtils
-            .subarray(shortMessage, 0, shortMessage[0] + 1) : new byte[]{});
-        byte[] smUd = (j == 0 && udhiPart ? ArrayUtils
-            .subarray(shortMessage, shortMessage[0] + 1, shortMessage.length - shortMessage[0] + 2) : shortMessage);
-
-        LOG.debug("PART[{}/{}]: SM:{} ({} bytes)",
-            j + 1, asm.size(),
-            Util.bytesToHexString(sm.getShortMessage()), sm.getShortMessage().length);
-        LOG.debug("PART[{}/{}]: UDHI:{} UDH:{} UD:{}",
-            j + 1, asm.size(), udhiPart,
-            Util.bytesToHexString(smUdh),
-            Util.bytesToHexString(smUd));
-
-        if (asm.size() > 1) {
-          final UserDataHeader newUserDataHeader = new UserDataHeader();
-          newUserDataHeader.addInformationElementConcatenated(
-              (byte) (reference & (byte) 0xff), asm.size(), j + 1);
-          if (j == 0 && udhi) {
-            newUserDataHeader.addHeader(udh.getBytesWithoutLength());
-          }
-          sm.setShortMessage(ArrayUtils.addAll(newUserDataHeader.getBytes(), smUd));
-          esmClass.setSpecificFeature(GSMSpecificFeature.UDHI);
-        } else {
-          if (!udhiPart) {
-            sm.setShortMessage(smUd);
-          }
-        }
-        sm.setEsmClass(esmClass.value());
-
-        LOG.debug("PART[{}/{}]: UDHI:{} UD:{} LENGTH:{}",
-            j + 1, asm.size(), GSMSpecificFeature.UDHI.containedIn(esmClass),
-            Util.bytesToHexString(sm.getShortMessage()),
-            sm.getShortMessage().length);
-
-        LOG.debug("PART[{}/{}]: SM:{}", j + 1, asm.size(), Util.bytesToHexString(sm.getShortMessage()));
-      }
-      return asm.toArray(new ShortMessage[asm.size()]);
-    } catch (Exception e) {
-      LOG.error("error in split8bit: " + e.getMessage());
-      e.printStackTrace();
-    }
-    return null;
   }
 
 //  public ShortMessage createShortMessageText(final String user, final String source, final String destination, final String message) {
@@ -323,21 +149,193 @@ public class SmsUtil {
 //    return shortMessage;
 //  }
 
-  public ShortMessage createShortMessageFlash() {
-    final ShortMessage shortMessage = new ShortMessage();
-    shortMessage.setDataCodingScheme(new SimpleDataCoding(Alphabet.ALPHA_DEFAULT, MessageClass.CLASS0).toByte());
-    shortMessage.setProtocolIdentifier((byte) 0x00);
-    return shortMessage;
+  // TODO: for text message, use char boundary
+  public ShortMessage[] split8bit(final int reference, final boolean udhi, final byte[] data, final int octets) {
+    log.debug("SMS user data header indicator: {}", udhi);
+    log.debug("SMS 8-bit reference: {}", Util.bytesToHexString((byte) (reference & 0xff)));
+    log.debug("SMS data: {} ({} bytes)", Util.bytesToHexString(data), data.length);
+    final ESMClass esmClass = new ESMClass();
+    int udhl = 0;
+    final byte[] udh;
+    final byte[] ud;
+    if (udhi) {
+      /* first byte is the header length remaining */
+      udhl = data[0] + 1;
+      udh = ArrayUtils.subarray(data, 0, udhl);
+      ud = ArrayUtils.subarray(data, udhl, data.length);
+    } else {
+      udh = new byte[]{};
+      ud = data.clone();
+    }
+    log.debug("DATA [" + String.format("%03d", data.length) + "]: "
+        + Util.bytesToHexString(data));
+    log.debug("UDH  ["
+        + String.format("%03d", udh.length) + "]: "
+        + Util.bytesToHexString(udh));
+    log.debug("UD   [" + String.format("%03d", ud.length) + "]: "
+        + Util.bytesToHexString(ud));
+
+    final ArrayList<ShortMessage> asm = new ArrayList<>();
+
+    int bytesDone = 0;
+    int part = 1;
+    int total = getTotalParts(udhl, data.length);
+
+    while (bytesDone < ud.length) {
+      final ShortMessage sm = new ShortMessage();
+      byte[] userDataHeaderBytes;
+      int availableBytes = (part == 1 && udhi ? octets - 5 - udh
+          .length : octets - 6);
+      int bytesToCopy = (ud.length - bytesDone > availableBytes ? availableBytes
+          : ud.length - bytesDone);
+      // LOG.debug("bytes to copy:" + bytesToCopy);
+      if (part == 1) {
+        userDataHeaderBytes = udh;
+        if (udhl > 0 || total > 1) {
+//            LOG.debug("FIRST PART MUST HAVE UDH, available:"
+//                + availableBytes + " bytes to copy:" + bytesToCopy);
+          esmClass.setSpecificFeature(GSMSpecificFeature.UDHI);
+        }
+      } else {
+        // next parts always have UDH for concatenation
+        userDataHeaderBytes = new byte[]{};
+        esmClass.setSpecificFeature(GSMSpecificFeature.UDHI);
+      }
+      if (total > 1) {
+        final UserDataHeader newUserDataHeader = new UserDataHeader();
+        newUserDataHeader.addInformationElementConcatenated((byte) (reference & (byte) 0xff), total, part);
+        if (part == 1 && udhi) {
+          newUserDataHeader.addHeader(ArrayUtils.subarray(udh, 1, udh[0] + 1));
+        }
+        userDataHeaderBytes = newUserDataHeader.getBytes();
+      }
+
+      final byte[] userDataBytes = new byte[bytesToCopy];
+      System.arraycopy(ud, bytesDone, userDataBytes, 0, bytesToCopy);
+
+      log.debug("[{}/{}] UDH:{} ({}) UD:{} ({}) UDHI:{}",
+          part, total,
+          Util.bytesToHexString(userDataHeaderBytes), userDataHeaderBytes.length,
+          Util.bytesToHexString(userDataBytes), userDataBytes.length,
+          GSMSpecificFeature.UDHI.containedIn(esmClass));
+      sm.setShortMessage(ArrayUtils.addAll(userDataHeaderBytes, userDataBytes));
+      sm.setEsmClass(esmClass.value());
+      asm.add(sm);
+      bytesDone += bytesToCopy;
+      part++;
+    }
+    return asm.toArray(new ShortMessage[asm.size()]);
   }
 
-  public ShortMessage createShortMessageMwi(final boolean active) {
-    final ShortMessage shortMessage = new ShortMessage();
-    final IndicationSense indicationSense = (active ? IndicationSense.ACTIVE : IndicationSense.INACTIVE);
-    shortMessage.setDataCodingScheme(
-        new MessageWaitingDataCoding(indicationSense, IndicationType.VOICEMAIL_MESSAGE_WAITING).toByte());
-    //byte dcs = (number == 0 ? (byte) 0xd0 : (byte) 0xd8);
-    shortMessage.setProtocolIdentifier((byte) 0x00);
-    return shortMessage;
+  public ShortMessage[] split8bitOK(final int reference, final boolean udhi, final byte[] data) {
+    log.debug("split8bit({},{},{})", reference, udhi, Util.bytesToHexString(data));
+    final ESMClass esmClass = new ESMClass();
+    if (udhi) {
+      esmClass.setSpecificFeature(GSMSpecificFeature.UDHI);
+    }
+    try {
+      int udhl = 0;
+      UserDataHeader udh;
+      byte[] ud;
+      if (udhi) {
+        /* first byte is the header length */
+        udhl = data[0];
+        udh = new UserDataHeader(ArrayUtils.subarray(data, 0, 1 + udhl));
+        ud = ArrayUtils.subarray(data, 1 + udhl, data.length);
+      } else {
+        /* create an empty user data header */
+        udh = new UserDataHeader();
+        ud = data.clone();
+      }
+      log.debug("DATA [{}]: {}", String.format("%03d", data.length), Util.bytesToHexString(data));
+      log.debug("UDH  [{}]: {}", String.format("%03d", udh.getBytes().length), Util.bytesToHexString(udh.getBytes()));
+      log.debug("UD   [{}]: {}", String.format("%03d", ud.length), Util.bytesToHexString(ud));
+
+      final ArrayList<ShortMessage> asm = new ArrayList<>();
+
+      int bytesDone = 0;
+      int part = 0;
+      while (bytesDone < ud.length) {
+        final ShortMessage sm = new ShortMessage();
+        byte[] userDataHeaderBytes;
+        int availableBytes = (part == 0 && udhi ? 140 - 5 - udh
+            .length() : 140 - 6);
+        int bytesToCopy = (ud.length - bytesDone > availableBytes ? availableBytes
+            : ud.length - bytesDone);
+        byte[] userDataBytes;
+
+        if (part == 0 && udhl > 0) {
+          log.debug("FIRST PART HAS OWN UDH, available: {} bytes to copy: {}", availableBytes, bytesToCopy);
+          userDataBytes = new byte[bytesToCopy];
+          userDataHeaderBytes = udh.getBytes();
+          esmClass.setSpecificFeature(GSMSpecificFeature.UDHI);
+        } else {
+          log.debug("bytes to copy: {}", bytesToCopy);
+          userDataBytes = new byte[bytesToCopy];
+          userDataHeaderBytes = new byte[]{}; //UserDataHeader().getBytes();
+          //sm.setUserDataHeaderIndicator(false);
+        }
+        System.arraycopy(ud, bytesDone, userDataBytes, 0, bytesToCopy);
+        //sm.setReference(reference);
+
+        log.debug("Adding UD: {} ({}) UDHI:{}"
+            , Util.bytesToHexString(userDataBytes),
+            userDataBytes.length,
+            GSMSpecificFeature.UDHI.containedIn(esmClass));
+        sm.setShortMessage(ArrayUtils.addAll(userDataHeaderBytes, userDataBytes));
+        sm.setEsmClass(esmClass.value());
+        asm.add(sm);
+        bytesDone += bytesToCopy;
+        part++;
+      }
+      log.debug("8-bit concatenated reference: 0x{}", Util.bytesToHexString((byte) (reference & (byte) 0xff)));
+      for (int j = 0; j < asm.size(); j++) {
+        ShortMessage sm = asm.get(j);
+        byte[] shortMessage = sm.getShortMessage();
+        // Split message into UDH and UD part
+        boolean udhiPart = GSMSpecificFeature.UDHI.containedIn(sm.getEsmClass());
+        byte[] smUdh = (j == 0 && udhiPart ? ArrayUtils
+            .subarray(shortMessage, 0, shortMessage[0] + 1) : new byte[]{});
+        byte[] smUd = (j == 0 && udhiPart ? ArrayUtils
+            .subarray(shortMessage, shortMessage[0] + 1, shortMessage.length - shortMessage[0] + 2) : shortMessage);
+
+        log.debug("PART[{}/{}]: SM:{} ({} bytes)",
+            j + 1, asm.size(),
+            Util.bytesToHexString(sm.getShortMessage()), sm.getShortMessage().length);
+        log.debug("PART[{}/{}]: UDHI:{} UDH:{} UD:{}",
+            j + 1, asm.size(), udhiPart,
+            Util.bytesToHexString(smUdh),
+            Util.bytesToHexString(smUd));
+
+        if (asm.size() > 1) {
+          final UserDataHeader newUserDataHeader = new UserDataHeader();
+          newUserDataHeader.addInformationElementConcatenated(
+              (byte) (reference & (byte) 0xff), asm.size(), j + 1);
+          if (j == 0 && udhi) {
+            newUserDataHeader.addHeader(udh.getBytesWithoutLength());
+          }
+          sm.setShortMessage(ArrayUtils.addAll(newUserDataHeader.getBytes(), smUd));
+          esmClass.setSpecificFeature(GSMSpecificFeature.UDHI);
+        } else {
+          if (!udhiPart) {
+            sm.setShortMessage(smUd);
+          }
+        }
+        sm.setEsmClass(esmClass.value());
+
+        log.debug("PART[{}/{}]: UDHI:{} UD:{} LENGTH:{}",
+            j + 1, asm.size(), GSMSpecificFeature.UDHI.containedIn(esmClass),
+            Util.bytesToHexString(sm.getShortMessage()),
+            sm.getShortMessage().length);
+
+        log.debug("PART[{}/{}]: SM:{}", j + 1, asm.size(), Util.bytesToHexString(sm.getShortMessage()));
+      }
+      return asm.toArray(new ShortMessage[asm.size()]);
+    } catch (Exception e) {
+      log.error("error in split8bit: " + e.getMessage());
+      e.printStackTrace();
+    }
+    return null;
   }
 
 //  public String toE164(final String destination) {
@@ -357,29 +355,29 @@ public class SmsUtil {
 //    }
 //  }
 
+  public ShortMessage createShortMessageFlash() {
+    final ShortMessage shortMessage = new ShortMessage();
+    shortMessage.setDataCodingScheme(new SimpleDataCoding(Alphabet.ALPHA_DEFAULT, MessageClass.CLASS0).toByte());
+    shortMessage.setProtocolIdentifier((byte) 0x00);
+    return shortMessage;
+  }
+
+  public ShortMessage createShortMessageMwi(final boolean active) {
+    final ShortMessage shortMessage = new ShortMessage();
+    final IndicationSense indicationSense = (active ? IndicationSense.ACTIVE : IndicationSense.INACTIVE);
+    shortMessage.setDataCodingScheme(
+        new MessageWaitingDataCoding(indicationSense, IndicationType.VOICEMAIL_MESSAGE_WAITING).toByte());
+    //byte dcs = (number == 0 ? (byte) 0xd0 : (byte) 0xd8);
+    shortMessage.setProtocolIdentifier((byte) 0x00);
+    return shortMessage;
+  }
+
   private int getTotalParts(final int udhl, final int length) {
     if (length <= 140) {
       return 1;
     } else {
       return 1 + ((length - (udhl == 0 ? 2 : 1)) / 134);
     }
-  }
-
-  public static int fillBits(final int udhSize) {
-    final int reminder = (udhSize % 7);
-    if (reminder != 0) {
-      return 7 - reminder;
-    }
-    return 0;
-  }
-
-  public static byte[] removeFillBits(final byte[] data, final int fillBits) {
-    final BitSet dataBitSet = BitSet.valueOf(data);
-    final BitSet bs = new BitSet(data.length * 8 - fillBits);
-    for (int i = 0; i < (data.length * 8 - fillBits); i++) {
-      bs.set(i, dataBitSet.get(i + fillBits));
-    }
-    return bs.toByteArray();
   }
 
 }

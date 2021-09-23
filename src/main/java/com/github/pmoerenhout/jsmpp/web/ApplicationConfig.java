@@ -3,8 +3,6 @@ package com.github.pmoerenhout.jsmpp.web;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.Bean;
@@ -16,11 +14,12 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Configuration
 @EnableAsync
 public class ApplicationConfig implements AsyncConfigurer {
-
-  private static final Logger LOG = LoggerFactory.getLogger(ApplicationConfig.class);
 
   @Override
   public Executor getAsyncExecutor() {
@@ -51,6 +50,6 @@ public class ApplicationConfig implements AsyncConfigurer {
 
   @EventListener
   public void logEnvironment(final ApplicationReadyEvent event) {
-    LOG.debug("Environment: {}", event.getApplicationContext().getEnvironment());
+    log.debug("Environment: {}", event.getApplicationContext().getEnvironment());
   }
 }

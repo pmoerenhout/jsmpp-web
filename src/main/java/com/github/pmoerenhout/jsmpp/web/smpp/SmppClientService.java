@@ -30,8 +30,6 @@ import org.jsmpp.session.MessageReceiverListener;
 import org.jsmpp.session.SessionStateListener;
 import org.jsmpp.util.AbsoluteTimeFormatter;
 import org.jsmpp.util.TimeFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -48,22 +46,19 @@ import com.github.pmoerenhout.jsmpp.pool.PooledSMPPSession;
 import com.github.pmoerenhout.jsmpp.pool.ThrottledSMPPSession;
 import com.github.pmoerenhout.jsmpp.web.exception.ConnectionNotFoundException;
 import com.github.pmoerenhout.jsmpp.web.sms.SmsService;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class SmppClientService implements ApplicationContextAware {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SmppClientService.class);
   private static final TimeFormatter TIME_FORMATTER = new AbsoluteTimeFormatter();
-
-  private ApplicationContext applicationContext;
 
   @Autowired
   private ApplicationEventPublisher applicationEventPublisher;
 
   @Autowired
   private SmppConfiguration smppConfiguration;
-
-  private Map<String, Connection> pooledSmppSessions = new HashMap<>();
 
   @Autowired
   private SessionStateListener sessionStateListener;
@@ -73,6 +68,10 @@ public class SmppClientService implements ApplicationContextAware {
 
   @Autowired
   private SmppClientService smppClientService;
+
+  private ApplicationContext applicationContext;
+
+  private final Map<String, Connection> pooledSmppSessions = new HashMap<>();
 
   @Override
   public void setApplicationContext(final ApplicationContext applicationContext) {
@@ -84,7 +83,7 @@ public class SmppClientService implements ApplicationContextAware {
     if (event.getApplicationContext().getParent() != null) {
       return;
     }
-    LOG.info("Received an application ready event ({}), starting SMPP connections", event.getApplicationContext());
+    log.info("Received an application ready event ({}), starting SMPP connections", event.getApplicationContext());
     final List<SmppConfiguration.SmppConnection> smppConnectionList = smppConfiguration.getConnections();
     for (SmppConfiguration.SmppConnection smppConnection : smppConnectionList) {
       final String connectionId = smppConnection.getId();
@@ -93,7 +92,7 @@ public class SmppClientService implements ApplicationContextAware {
       }
 
       if (!smppConnection.isEnabled()) {
-        LOG.info("SMPP connection '{}' is not enabled, skipping...", connectionId);
+        log.info("SMPP connection '{}' is not enabled, skipping...", connectionId);
         continue;
       }
       PooledSMPPSession pooledSMPPSession = null;
@@ -113,6 +112,7 @@ public class SmppClientService implements ApplicationContextAware {
 
         pooledSMPPSession = new PooledSMPPSession(
             smppConnection.getHost(), smppConnection.getPort(),
+            smppConnection.isSsl(),
             smppConnection.getSystemId(), smppConnection.getPassword(), smppConnection.getSystemType(), messageReceiverListener,
             sessionStateListener,
             smppConnection.getEnquireLinkTimer(),
@@ -124,7 +124,7 @@ public class SmppClientService implements ApplicationContextAware {
             smppConnection.getPoolRate(),
             smppConnection.getMaxConcurrentRequests(),
             smppConnection.getPduProcessorDegree());
-        LOG.info("POOL: {} {} {}", smppConnection.getPoolMaxTotal(), smppConnection.getPoolMinIdle(), smppConnection.getPoolMaxIdle());
+        log.info("POOL: {} {} {}", smppConnection.getPoolMaxTotal(), smppConnection.getPoolMinIdle(), smppConnection.getPoolMaxIdle());
 
 //        final SMPPSession session = new SMPPSession(SocketConnectionFactory.getInstance());
 //        session.setMessageReceiverListener(messageReceiverListener);
@@ -142,11 +142,11 @@ public class SmppClientService implements ApplicationContextAware {
 
         // sendSubmitMulti(connectionId);
 
-        LOG.info(
+        log.info(
             "Created pooled SMPP session for connection '{}' '{}' ({}) with serviceType {}, charset {}, transmittable {}, longSms:{} {}, sms size {}",
             connectionId, contextId, description, serviceType, defaultCharset, transmittable, longSmsEnabled, longSmsMaxSize, singleSmsMaxSize);
       } catch (Exception e) {
-        LOG.error("Could not create the SMPP session with connection '" + connectionId + "' to " + smppConnection.getHost() + ':' + smppConnection.getPort(),
+        log.error("Could not create the SMPP session with connection '" + connectionId + "' to " + smppConnection.getHost() + ':' + smppConnection.getPort(),
             e);
         if (pooledSMPPSession != null) {
           pooledSMPPSession.close();
@@ -216,7 +216,7 @@ public class SmppClientService implements ApplicationContextAware {
 
   public String sendSubmitMulti(final String connectionId) throws Exception {
     final Connection connection = pooledSmppSessions.get(connectionId);
-    final PooledSMPPSession pooledSMPPSession = connection.getPooledSMPPSession();
+    final PooledSMPPSession<ThrottledSMPPSession> pooledSMPPSession = connection.getPooledSMPPSession();
     try {
       ThrottledSMPPSession throttledSMPPSession = null;
       try {
@@ -232,27 +232,27 @@ public class SmppClientService implements ApplicationContextAware {
             new RegisteredDelivery(SMSCDeliveryReceipt.FAILURE), ReplaceIfPresentFlag.REPLACE,
             new GeneralDataCoding(Alphabet.ALPHA_DEFAULT, MessageClass.CLASS1, false), (byte) 0,
             "jSMPP simplifies SMPP on Java platform".getBytes());
-        LOG.info("{} messages submitted, result message id {}", addresses.length, result.getMessageId());
+        log.info("{} messages submitted, result message id {}", addresses.length, result.getMessageId());
         for (UnsuccessDelivery unsuccessDelivery : result.getUnsuccessDeliveries()) {
-          LOG.info("Unsuccessful delivery to {}: {}", unsuccessDelivery.getDestinationAddress(), unsuccessDelivery.getErrorStatusCode());
+          log.info("Unsuccessful delivery to {}: {}", unsuccessDelivery.getDestinationAddress(), unsuccessDelivery.getErrorStatusCode());
         }
 
         return "73746567346573249";
       } catch (ResponseTimeoutException e) {
-        LOG.error("Response timeout: {}", e.getMessage());
+        log.error("Response timeout: {}", e.getMessage());
       } catch (NegativeResponseException e) {
-        LOG.error("Negative response: {}", e.getMessage());
+        log.error("Negative response: {}", e.getMessage());
       } catch (InvalidResponseException e) {
-        LOG.error("Invalid response: {}", e.getMessage());
+        log.error("Invalid response: {}", e.getMessage());
       } catch (PDUException e) {
-        LOG.error("PDU exception: {}", e.getMessage());
+        log.error("PDU exception: {}", e.getMessage());
       } catch (IOException e) {
-        LOG.error("IO exception: {}", e.getMessage());
+        log.error("IO exception: {}", e.getMessage());
       } finally {
         pooledSMPPSession.returnObject(throttledSMPPSession);
       }
     } catch (Exception ee) {
-      LOG.error("Error in SMPP connection pool", ee);
+      log.error("Error in SMPP connection pool", ee);
     }
     return null;
   }
@@ -281,15 +281,14 @@ public class SmppClientService implements ApplicationContextAware {
     final String beanName = "messageReceiverListenerImpl" + connectionId;
     registry.registerBeanDefinition(beanName, definitionBuilder.getBeanDefinition());
 
-    LOG.debug("Create MessageReceiverListenerImpl bean with name {}", beanName);
+    log.debug("Create MessageReceiverListenerImpl bean with name {}", beanName);
     final MessageReceiverListenerImpl messageReceiverListener = applicationContext.getBean(beanName, MessageReceiverListenerImpl.class);
     return messageReceiverListener;
   }
 
   public String getConnectionContextId(final String connectionId) throws ConnectionNotFoundException {
-    final Iterator<SmppConfiguration.SmppConnection> iterator = smppConfiguration.getConnections().iterator();
-    while (iterator.hasNext()) {
-      final SmppConfiguration.SmppConnection smppConnection = iterator.next();
+    for(final SmppConfiguration.SmppConnection smppConnection : smppConfiguration.getConnections())
+    {
       if (StringUtils.equals(smppConnection.getId(), connectionId)) {
         return smppConnection.getContextId();
       }

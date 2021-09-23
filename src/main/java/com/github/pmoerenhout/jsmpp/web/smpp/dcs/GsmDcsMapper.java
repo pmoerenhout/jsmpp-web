@@ -1,13 +1,10 @@
 package com.github.pmoerenhout.jsmpp.web.smpp.dcs;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.github.pmoerenhout.jsmpp.web.Util;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class GsmDcsMapper implements DcsMapper {
-
-  private static final Logger LOG = LoggerFactory.getLogger(GsmDcsMapper.class);
 
   //  private static final byte[] DCS_MAP = new byte[]{
 //      // http://www.etsi.org/deliver/etsi_ts/100900_100999/100900/07.02.00_60/ts_100900v070200p.pdf
@@ -54,7 +51,7 @@ public class GsmDcsMapper implements DcsMapper {
   public byte map(final byte tpDcs) throws InvalidDataCodingSchemeException {
     final byte dcs = mapDcs(tpDcs);
     if (tpDcs != dcs) {
-      LOG.debug("Replace DCS from {} (GSM) to {} (SMPP)", Util.bytesToHexString(tpDcs), Util.bytesToHexString(dcs));
+      log.debug("Replace DCS from {} (GSM) to {} (SMPP)", Util.bytesToHexString(tpDcs), Util.bytesToHexString(dcs));
     }
     return dcs;
   }

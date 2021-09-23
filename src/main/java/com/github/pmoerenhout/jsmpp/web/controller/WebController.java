@@ -12,8 +12,6 @@ import org.apache.commons.lang3.RandomUtils;
 import org.jsmpp.bean.GSMSpecificFeature;
 import org.jsmpp.bean.NumberingPlanIndicator;
 import org.jsmpp.bean.TypeOfNumber;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Sort;
@@ -37,13 +35,13 @@ import com.github.pmoerenhout.jsmpp.web.model.DeliverWebDto;
 import com.github.pmoerenhout.jsmpp.web.model.Greeting;
 import com.github.pmoerenhout.jsmpp.web.model.HelloMessage;
 import com.github.pmoerenhout.jsmpp.web.smpp.util.SmppUtil;
+import lombok.extern.slf4j.Slf4j;
 
 // @Secured(AUTHORITY_API)
+@Slf4j
 @EnableScheduling
 @Controller
 public class WebController {
-
-  private static final Logger LOG = LoggerFactory.getLogger(WebController.class);
 
   private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -114,14 +112,14 @@ public class WebController {
   //ObjectMapper mapper = new ObjectMapper();
   //@Scheduled(fixedRate = 5000)
   public void sendSms() {
-    LOG.info("sendSms");
+    log.info("sendSms");
     final List<SmIn> smIns = smInRepository.findAll();
-    LOG.info("sendSms {}", smIns.size());
+    log.info("sendSms {}", smIns.size());
     smIns.forEach(d -> {
       final String message = SmppUtil.isBinary(d.getDataCodingScheme()) ?
           Util.bytesToHexString(d.getShortMessage()) :
           SmppUtil.decode(d.getDataCodingScheme(), d.getEsmClass(), d.getShortMessage(), SmppUtil.GSM_PACKED_CHARSET);
-      LOG.info("message: {}", message);
+      log.info("message: {}", message);
       final String userDataHeader = GSMSpecificFeature.UDHI.containedIn(d.getEsmClass()) ?
           Util.bytesToHexString(ArrayUtils.subarray(d.getShortMessage(), 1, 1 + d.getShortMessage()[0]))
           : "";
@@ -157,12 +155,12 @@ public class WebController {
   //@Scheduled(fixedRate = 5000)
   @EventListener
   public void sendStomp(final SmInEvent event) {
-    LOG.info("smIn from {}", event.getConnectionId());
+    log.info("smIn from {}", event.getConnectionId());
     final SmIn d = event.getSm();
     final String message = SmppUtil.isBinary(d.getDataCodingScheme()) ?
         Util.bytesToHexString(d.getShortMessage()) :
         SmppUtil.decode(d.getDataCodingScheme(), d.getEsmClass(), d.getShortMessage(), SmppUtil.GSM_PACKED_CHARSET);
-    LOG.info("message: '{}'", Util.onlyPrintable(message.getBytes()));
+    log.info("message: '{}'", Util.onlyPrintable(message.getBytes()));
     final String userDataHeader = GSMSpecificFeature.UDHI.containedIn(d.getEsmClass()) ?
         Util.bytesToHexString(ArrayUtils.subarray(d.getShortMessage(), 1, 1 + d.getShortMessage()[0]))
         : "";

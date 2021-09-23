@@ -2,9 +2,11 @@ package com.github.pmoerenhout.jsmpp.web.smpp;
 
 import java.nio.charset.Charset;
 
+import org.jsmpp.session.SMPPSession;
+
 import com.github.pmoerenhout.jsmpp.pool.PooledSMPPSession;
 
-public final class Connection {
+public final class Connection<T extends SMPPSession> {
 
   private String id;
   private String contextId;
@@ -15,12 +17,12 @@ public final class Connection {
   private boolean longSmsEnabled;
   private int longSmsMaxSize;
   private Integer singleSmsMaxSize;
-  private PooledSMPPSession pooledSMPPSession;
+  private PooledSMPPSession<T> pooledSMPPSession;
 
   public Connection(final String id, final String contextId, final String description, final String serviceType, final Charset charset,
                     final boolean transmitable, final boolean longSmsEnabled,
                     final int longSmsMaxSize, final Integer singleSmsMaxSize,
-                    final PooledSMPPSession pooledSMPPSession) {
+                    final PooledSMPPSession<T> pooledSMPPSession) {
     this.id = id;
     this.contextId = contextId;
     this.description = description;
@@ -57,7 +59,7 @@ public final class Connection {
     return transmitable;
   }
 
-  public PooledSMPPSession getPooledSMPPSession() {
+  public PooledSMPPSession<T> getPooledSMPPSession() {
     return pooledSMPPSession;
   }
 

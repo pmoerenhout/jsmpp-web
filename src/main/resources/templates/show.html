@@ -3,13 +3,13 @@
 <head>
   <title>Show received SMS</title>
   <meta content="text/html; charset=UTF-8" http-equiv="Content-Type"/>
-  <link href="webjars/bootstrap/4.5.2/css/bootstrap.css" rel="stylesheet"
+  <link href="webjars/bootstrap/5.1.0/css/bootstrap.css" rel="stylesheet"
         th:href="@{/webjars/bootstrap/__#{bootstrap.version}__/css/bootstrap.css}">
   <link href="https://use.fontawesome.com/releases/v5.13.0/css/all.css" rel="stylesheet"
         th:href="@{/webjars/font-awesome/__#{font-awesome.version}__/css/all.css}">
-  <script src="webjars/jquery/3.5.1/jquery.js" th:src="@{/webjars/jquery/__#{jquery.version}__/jquery.js}"></script>
+  <script src="webjars/jquery/3.6.0/jquery.js" th:src="@{/webjars/jquery/__#{jquery.version}__/jquery.js}"></script>
   <script crossorigin="anonymous" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.1/umd/popper.min.js"></script>
-  <script src="webjars/bootstrap/4.5.2/js/bootstrap.js" th:src="@{/webjars/bootstrap/__#{bootstrap.version}__/js/bootstrap.js}"></script>
+  <script src="webjars/bootstrap/5.1.0/js/bootstrap.js" th:src="@{/webjars/bootstrap/__#{bootstrap.version}__/js/bootstrap.js}"></script>
   <script src="/webjars/sockjs-client/sockjs.min.js" th:src="@{/webjars/sockjs-client/sockjs.min.js}"></script>
   <script src="/webjars/stomp-websocket/stomp.min.js" th:src="@{/webjars/stomp-websocket/stomp.min.js}"></script>
   <script src="/app.js" th:src="@{/app.js}"></script>
@@ -31,16 +31,26 @@
   <meta content="#ffffff" name="msapplication-TileColor">
   <meta content="/ms-icon-144x144.png" name="msapplication-TileImage">
   <meta content="#ffffff" name="theme-color">
+  <style>
+    .jumbotron {
+      margin-bottom: 2rem;
+      background-color: #e9ecef;
+      border-radius: .3rem;
+    }
+  </style>
 
 </head>
 <body>
 <div class="container-fluid">
 
-  <div class="jumbotron">
-    <h2 class="display-3">Welcome to the SMS displayer!</h2>
+  <div class="jumbotron p-3">
+    <h2 class="display-3 fw-bold">Welcome to the amazing SMS displayer!</h2>
     <p class="lead">Send an SMS to <a th:href="${'sms:'+msisdn}" th:text="${msisdn}"></a> and it will be displayed here with all it's details.</p>
     <hr class="my-1">
-    <a class="btn btn-primary btn-lg" href="https://intermediair2.aegon.nl/" role="button">Learn more</a>
+    <p>Please use it at your own risk. All contents of your SMS will be shown here. You can send even Unicode characters.
+      If you need a REST API, please contact me at pim.moerenhout (at) gmail.com.</p>
+    <a class="btn btn-primary btn-lg" href="https://onewelcome.com/" role="button">OneWelcome</a>
+    <a class="btn btn-primary btn-lg" href="https://jsmpp.org/" role="button">jSMPP</a>
   </div>
 
   <table class="table table-sm table-striped" id="sms" name="sms">
@@ -78,7 +88,7 @@
   </table>
 
   <div class="alert alert-warning" role="alert">
-    &copy; 2020 Pim Moerenhout.
+    &copy; 2021 Pim Moerenhout.
     Send any questions to <a href="mailto:pim.moerenhout@gmail.com">Pim Moerenhout</a>.
   </div>
 

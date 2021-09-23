@@ -30,8 +30,6 @@ import org.jsmpp.session.DataSmResult;
 import org.jsmpp.session.MessageReceiverListener;
 import org.jsmpp.session.Session;
 import org.jsmpp.util.InvalidDeliveryReceiptException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 
 import com.github.pmoerenhout.jsmpp.web.Util;
@@ -42,9 +40,10 @@ import com.github.pmoerenhout.jsmpp.web.sms.SmsService;
 import com.github.pmoerenhout.pduutils.gsm0340.Pdu;
 import com.github.pmoerenhout.pduutils.gsm0340.PduParser;
 import com.github.pmoerenhout.pduutils.gsm0340.SmsDeliveryPdu;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class MessageReceiverListenerImpl implements MessageReceiverListener {
-  private static final Logger LOG = LoggerFactory.getLogger(MessageReceiverListenerImpl.class);
 
   private String connectionId;
   private Charset defaultCharset;
@@ -67,7 +66,7 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
   public void onAcceptDeliverSm(final DeliverSm deliverSm)
       throws ProcessRequestException {
 
-    LOG.info("onAcceptDeliverSm");
+    log.info("onAcceptDeliverSm");
 
     final Connection connection = smppClientService.getSmppConnection(connectionId);
 
@@ -77,7 +76,7 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
       try {
         final DeliveryReceipt delReceipt = deliverSm.getShortMessageAsDeliveryReceipt();
 
-        LOG.info("Received receipt: {} {}", delReceipt.getId(), delReceipt.getFinalStatus());
+        log.info("Received receipt: {} {}", delReceipt.getId(), delReceipt.getFinalStatus());
 
         // lets cover the id to hex string format
         // long id = Long.parseLong(delReceipt.getId()) & 0xffffffff;
@@ -98,23 +97,23 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
 //        applicationEventPublisher.publishEvent(new DeliveryReceiptEvent(this, connectionId, delReceipt, deliverSm));
 
       } catch (InvalidDeliveryReceiptException e) {
-        LOG.error("Failed getting delivery receipt", e);
+        log.error("Failed getting delivery receipt", e);
       }
     } else {
       // this message is regular short message
       final OptionalParameter.OctetString messagePayload = deliverSm.getOptionalParameter(OptionalParameter.Message_payload.class);
-      LOG.debug("SM: {}", Util.bytesToHexString(deliverSm.getShortMessage()));
+      log.debug("SM: {}", Util.bytesToHexString(deliverSm.getShortMessage()));
       try {
         final byte[] message = SmppUtil.getShortMessageOrPayload(deliverSm.getShortMessage(), messagePayload);
         if (SmppUtil.isBinary(deliverSm.getDataCoding())) {
-          LOG.debug("Receiving deliver_sm message: ESM:{} DCS:{} PID:{} DATA:{}",
+          log.debug("Receiving deliver_sm message: ESM:{} DCS:{} PID:{} DATA:{}",
               Util.bytesToHexString(deliverSm.getEsmClass()),
               Util.bytesToHexString(deliverSm.getDataCoding()),
               Util.bytesToHexString(deliverSm.getProtocolId()),
               Util.bytesToHexString(message));
         } else {
           final String decodedMessage = SmppUtil.decode(deliverSm.getDataCoding(), deliverSm.getEsmClass(), message, defaultCharset);
-          LOG.debug("Receiving deliver_sm message: ESM:{} DCS:{} PID:{} DATA:{} TEXT:'{}'",
+          log.debug("Receiving deliver_sm message: ESM:{} DCS:{} PID:{} DATA:{} TEXT:'{}'",
               Util.bytesToHexString(deliverSm.getEsmClass()),
               Util.bytesToHexString(deliverSm.getDataCoding()),
               Util.bytesToHexString(deliverSm.getProtocolId()),
@@ -153,10 +152,10 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
         final byte[] pduRaw = getOptionalByteArray(deliverSm.getOptionalParameter(SmppCustomOptionalParameters.OPTIONAL_TAG_PDU));
         if (pduRaw != null) {
           PduParser pduParser = new PduParser();
-          LOG.info("HEX: '{}'", Util.bytesToHexString(pduRaw));
+          log.info("HEX: '{}'", Util.bytesToHexString(pduRaw));
           Pdu pdu = pduParser.parsePdu(Util.bytesToHexString(pduRaw));
           if (pdu instanceof SmsDeliveryPdu) {
-            LOG.trace("SCTS: {}", ((SmsDeliveryPdu) pdu).getServiceCentreTimestamp());
+            log.trace("SCTS: {}", ((SmsDeliveryPdu) pdu).getServiceCentreTimestamp());
           }
         }
         // Service Centre Timestamp (SCTS)
@@ -170,14 +169,14 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
         sm.setShortMessage(message);
         if (smsService.findSmIn(sm).isPresent()) {
           final String displayMessage = SmppUtil.decode(sm.getDataCodingScheme(), sm.getEsmClass(), sm.getShortMessage());
-          LOG.info("Message '{}' already exists in database", displayMessage);
+          log.info("Message '{}' already exists in database", displayMessage);
           return;
         }
 
         final SmIn saved = smsService.saveSmIn(sm);
 
         final Long id = saved.getId();
-        LOG.info("SmIn database id is {}", id);
+        log.info("SmIn database id is {}", id);
         applicationEventPublisher.publishEvent(new SmInEvent(this, connectionId, saved));
 
       } catch (InvalidMessagePayloadException e) {
@@ -187,12 +186,12 @@ public class MessageReceiverListenerImpl implements MessageReceiverListener {
   }
 
   public void onAcceptAlertNotification(AlertNotification alertNotification) {
-    LOG.info("Receiving alert notification from {}: {}", alertNotification.getSourceAddr(), alertNotification.getEsmeAddr());
+    log.info("Receiving alert notification from {}: {}", alertNotification.getSourceAddr(), alertNotification.getEsmeAddr());
   }
 
   public DataSmResult onAcceptDataSm(DataSm dataSm, Session source)
       throws ProcessRequestException {
-    LOG.info("Receiving data sm from {} to {}", dataSm.getSourceAddr(), dataSm.getDestAddress());
+    log.info("Receiving data sm from {} to {}", dataSm.getSourceAddr(), dataSm.getDestAddress());
     throw new ProcessRequestException("data_sm is not implemented", 99);
   }
 

@@ -18,21 +18,20 @@ import org.jsmpp.bean.GeneralDataCoding;
 import org.jsmpp.bean.MessageClass;
 import org.jsmpp.bean.OptionalParameter;
 import org.jsmpp.bean.SubmitSm;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.github.pmoerenhout.jsmpp.web.Util;
 import com.github.pmoerenhout.jsmpp.web.smpp.InvalidMessagePayloadException;
 import com.github.pmoerenhout.jsmpp.web.smpp.util.ie.InformationElement;
 import com.github.pmoerenhout.jsmpp.web.smpp.util.ie.UserDataHeader;
 import com.github.pmoerenhout.jsmpp.web.smpp.util.ie.UserDataHeaderException;
+import lombok.extern.slf4j.Slf4j;
 import net.freeutils.charset.gsm.CCGSMCharset;
 import net.freeutils.charset.gsm.CCPackedGSMCharset;
 
+@Slf4j
 public class SmppUtil {
   public static final CCGSMCharset GSM_CHARSET = new CCGSMCharset();
   public static final CCPackedGSMCharset GSM_PACKED_CHARSET = new CCPackedGSMCharset();
-  private static final Logger log = LoggerFactory.getLogger(SmppUtil.class);
   private static final Charset ASCII_CHARSET = StandardCharsets.US_ASCII;
   private static final Charset LATIN_CHARSET = StandardCharsets.ISO_8859_1;
   private static final Charset LATIN_CYRILLIC_CHARSET = Charset.forName("ISO-8859-5");
@@ -58,26 +57,26 @@ public class SmppUtil {
             return new String(udWithoutFill, defaultCharset);
           }
         }
-        return new String(getUserDataWithoutHeader(udhi,ud), defaultCharset);
+        return new String(getUserDataWithoutHeader(udhi, ud), defaultCharset);
       case ALPHA_8_BIT:
-        return Util.bytesToHexString(getUserDataWithoutHeader(udhi,ud));
+        return Util.bytesToHexString(getUserDataWithoutHeader(udhi, ud));
       case ALPHA_IA5:
-        return new String(getUserDataWithoutHeader(udhi,ud), ASCII_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi, ud), ASCII_CHARSET);
       case ALPHA_LATIN1:
-        return new String(getUserDataWithoutHeader(udhi,ud), LATIN_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi, ud), LATIN_CHARSET);
       case ALPHA_JIS:
-        return new String(getUserDataWithoutHeader(udhi,ud), JIS_X0208_1990_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi, ud), JIS_X0208_1990_CHARSET);
       case ALPHA_CYRILLIC:
-        return new String(getUserDataWithoutHeader(udhi,ud), LATIN_CYRILLIC_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi, ud), LATIN_CYRILLIC_CHARSET);
       case ALPHA_LATIN_HEBREW:
-        return new String(getUserDataWithoutHeader(udhi,ud), LATIN_HEBREW_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi, ud), LATIN_HEBREW_CHARSET);
       case ALPHA_UCS2:
-        return new String(getUserDataWithoutHeader(udhi,ud), UCS2_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi, ud), UCS2_CHARSET);
       case ALPHA_JIS_X_0212_1990:
-        return new String(getUserDataWithoutHeader(udhi,ud), JIS_X0212_1990_CHARSET);
+        return new String(getUserDataWithoutHeader(udhi, ud), JIS_X0212_1990_CHARSET);
     }
     log.warn("Unknown alphabet for SMPP DCS {}: {}", Util.bytesToHexString(dcs), alphabet);
-    return Util.bytesToHexString(getUserDataWithoutHeader(udhi,ud));
+    return Util.bytesToHexString(getUserDataWithoutHeader(udhi, ud));
     // throw new IllegalArgumentException("Unknown alphabet for SMPP DCS " + Util.bytesToHexString(dcs) + ": " + alphabet);
   }
 

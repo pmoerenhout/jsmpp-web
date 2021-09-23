@@ -52,7 +52,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         .antMatchers(HttpMethod.GET, "/documentation/**").permitAll()
         .antMatchers("/session").hasAnyRole(ROLE_API)
         .antMatchers("/sms/*").hasAnyRole(ROLE_API)
-        .antMatchers("/psk/*").hasAnyRole(ROLE_API)
         .anyRequest().fullyAuthenticated().and()
         .httpBasic().realmName("This REST API requires Basic HTTP authorization");
   }

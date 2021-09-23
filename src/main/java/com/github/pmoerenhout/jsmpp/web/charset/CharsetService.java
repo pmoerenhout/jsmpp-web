@@ -5,12 +5,10 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.SortedMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class CharsetService {
-
-  private static final Logger LOG = LoggerFactory.getLogger(CharsetService.class);
 
   private CharsetService() {
   }
@@ -29,7 +27,7 @@ public class CharsetService {
         sb.append((String) j.next());
         sb.append(", ");
       }
-      LOG.debug("{}, {}, {} {}", name, displayName, sb.toString().trim(), (e.canEncode() ? "can encode" : ", CANNOT ENCODE"));
+      log.debug("{}, {}, {} {}", name, displayName, sb.toString().trim(), (e.canEncode() ? "can encode" : ", CANNOT ENCODE"));
     }
   }
 
