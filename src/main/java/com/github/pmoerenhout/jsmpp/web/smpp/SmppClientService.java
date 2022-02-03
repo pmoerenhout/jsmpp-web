@@ -30,7 +30,6 @@ import org.jsmpp.session.MessageReceiverListener;
 import org.jsmpp.session.SessionStateListener;
 import org.jsmpp.util.AbsoluteTimeFormatter;
 import org.jsmpp.util.TimeFormatter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -46,28 +45,20 @@ import com.github.pmoerenhout.jsmpp.pool.PooledSMPPSession;
 import com.github.pmoerenhout.jsmpp.pool.ThrottledSMPPSession;
 import com.github.pmoerenhout.jsmpp.web.exception.ConnectionNotFoundException;
 import com.github.pmoerenhout.jsmpp.web.sms.SmsService;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@AllArgsConstructor
 @Service
 public class SmppClientService implements ApplicationContextAware {
 
   private static final TimeFormatter TIME_FORMATTER = new AbsoluteTimeFormatter();
 
-  @Autowired
   private ApplicationEventPublisher applicationEventPublisher;
-
-  @Autowired
   private SmppConfiguration smppConfiguration;
-
-  @Autowired
   private SessionStateListener sessionStateListener;
-
-  @Autowired
   private SmsService smsService;
-
-  @Autowired
-  private SmppClientService smppClientService;
 
   private ApplicationContext applicationContext;
 
@@ -276,7 +267,7 @@ public class SmppClientService implements ApplicationContextAware {
     definitionBuilder.addConstructorArgValue(connectionId);
     definitionBuilder.addConstructorArgValue(defaultCharset);
     definitionBuilder.addConstructorArgValue(smsService);
-    definitionBuilder.addConstructorArgValue(smppClientService);
+    definitionBuilder.addConstructorArgValue(this);
     definitionBuilder.addConstructorArgValue(applicationEventPublisher);
     final String beanName = "messageReceiverListenerImpl" + connectionId;
     registry.registerBeanDefinition(beanName, definitionBuilder.getBeanDefinition());

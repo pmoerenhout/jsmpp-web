@@ -4,7 +4,6 @@ import static com.github.pmoerenhout.jsmpp.web.JsmppWebConstants.AUTHORITY_API;
 import static com.github.pmoerenhout.jsmpp.web.JsmppWebConstants.ROLE_API;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -28,14 +27,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   // https://gerrydevstory.com/tag/spring-security/
 
   @Autowired
-  @Qualifier("apiUserDetailService")
+  //@Qualifier("userDetailsService")
   private UserDetailsService userDetailsService;
 
   @Bean(name = "sessionRegistry")
   public SessionRegistry sessionRegistry() {
     return new SessionRegistryImpl();
   }
-
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
@@ -46,6 +44,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         .sessionManagement().disable()
         .anonymous().key("anonymousAuth").principal("anonymous").authorities(AUTHORITY_API).and()
         .authorizeRequests()
+        .antMatchers(HttpMethod.GET, "/show").permitAll()
         .antMatchers(HttpMethod.GET, "/v2/api-docs").permitAll()
         .antMatchers(HttpMethod.GET, "/swagger-resources").permitAll()
         .antMatchers(HttpMethod.GET, "/configuration/**").permitAll()

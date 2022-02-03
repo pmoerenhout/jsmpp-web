@@ -8,7 +8,6 @@ import java.util.UUID;
 import org.jsmpp.bean.DeliverSm;
 import org.jsmpp.bean.DeliveryReceipt;
 import org.jsmpp.bean.OptionalParameter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
@@ -26,25 +25,21 @@ import com.github.pmoerenhout.jsmpp.web.jpa.model.SmOut;
 import com.github.pmoerenhout.jsmpp.web.jpa.repository.DrRepository;
 import com.github.pmoerenhout.jsmpp.web.jpa.repository.SmInRepository;
 import com.github.pmoerenhout.jsmpp.web.jpa.repository.SmOutRepository;
-import com.github.pmoerenhout.jsmpp.web.smpp.SmppClientService;
 import com.github.pmoerenhout.jsmpp.web.sms.util.model.ShortMessage;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@AllArgsConstructor
 @Service
 public class SmsService {
 
   private final static OptionalParameter[] NO_OPTIONAL_PARAMETERS = new OptionalParameter[]{};
 
-  @Autowired
   private SmInRepository smInRepository;
-  @Autowired
   private SmOutRepository smOutRepository;
-  @Autowired
   private DrRepository drRepository;
-  @Autowired
-  private SmppClientService smppClientService;
-  @Autowired
+  //private SmppClientService smppClientService;
   private ApplicationEventPublisher publisher;
 
   @Transactional(readOnly = true)
@@ -80,15 +75,15 @@ public class SmsService {
 //    }
 //  }
 
-  public SmOut findOneByConnectionIdAndMessageIdAndSourceAndDestination(
-      final String connectionId,
-      final String messageId,
-      final String source,
-      final String destination)
-      throws ConnectionNotFoundException {
-    final List<String> connectionIds = smppClientService.getConnectionsInSameContext(connectionId);
-    return smOutRepository.findOneByConnectionIdInAndMessageIdAndSourceAndDestination(connectionIds, messageId, source, destination);
-  }
+//  public SmOut findOneByConnectionIdAndMessageIdAndSourceAndDestination(
+//      final String connectionId,
+//      final String messageId,
+//      final String source,
+//      final String destination)
+//      throws ConnectionNotFoundException {
+//    final List<String> connectionIds = smppClientService.getConnectionsInSameContext(connectionId);
+//    return smOutRepository.findOneByConnectionIdInAndMessageIdAndSourceAndDestination(connectionIds, messageId, source, destination);
+//  }
 
   public SmOut saveSm(final UUID operationId, final String user, final ShortMessage shortMessage) {
     final SmOut smOut = new SmOut();
@@ -185,7 +180,7 @@ public class SmsService {
     final Dr drSaved = drRepository.save(dr);
     log.debug("Saved delivery receipt with id {} for {}", drSaved.getId(), deliverSm.getSourceAddr());
 
-    final List<String> connectionIds = smppClientService.getConnectionsInSameContext(connectionId);
+    //final List<String> connectionIds = smppClientService.getConnectionsInSameContext(connectionId);
 
     // The delivery receipt source and destination are reversed for the incoming message
     // final SmOut smOut = findSmFromReceipt(connectionIds, deliverSm.getDestAddress(), deliverSm.getSourceAddr(), deliveryReceipt.getId());
