@@ -13,6 +13,9 @@ import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.security.authentication.AuthenticationTrustResolver;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -47,6 +50,18 @@ public class ApplicationConfig implements AsyncConfigurer {
 //  public SessionFactory sessionFactory(final HibernateEntityManagerFactory hibernateEntityManagerFactory){
 //    return hibernateEntityManagerFactory.getSessionFactory();
 //  }
+
+  @Bean
+  public AuthenticationTrustResolver trustResolver() {
+    // allow anonymous as principal/authentication for the time being, until mutual certificate is implemented
+    return new AnonymousAuthenticationTrustResolverImpl();
+  }
+
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+    final PasswordEncoder encoder = new BCryptPasswordEncoder();
+    return encoder;
+  }
 
   @EventListener
   public void logEnvironment(final ApplicationReadyEvent event) {
