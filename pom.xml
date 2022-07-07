@@ -53,7 +53,7 @@
     <commons-rng.version>1.4</commons-rng.version>
 
     <jcharset.version>2.1</jcharset.version>
-    <jsmpp.version>2.3.11</jsmpp.version>
+    <jsmpp.version>3.0.0</jsmpp.version>
     <jsmpp-pool.version>1.0-SNAPSHOT</jsmpp-pool.version>
     <log4j2.version>2.17.2</log4j2.version>
     <marineapi.version>0.11.0</marineapi.version>
