@@ -1,0 +1,37 @@
+logging:
+  pattern:
+    console: ''
+  file:
+    name: /var/log/tomcat/jsmpp-web.log
+  level:
+    root: debug
+
+smpp:
+  connections:
+    -
+      id: weidebloemen_modem
+      context-id: weidebloemen_ctx
+      description: This is the connection (TRX) to localhost:2075
+      enabled: true
+      service-type: CMT
+      charset: CCPGSM
+      host: 217.105.66.200
+      port: 2075
+      system-id: sys1
+      password: secret
+      system-type: CGL
+      bind-type: BIND_TRX
+      bind-timeout: 5000
+      enquire-link-timer: 60000
+      transaction-timer: 5000
+      pdu-processor-degree: 2
+      long-sms-enabled: true
+      long-sms-max-size: 1600
+      pool-max-total: 2
+      pool-min-idle: 1
+      pool-max-idle: 2
+      pool-rate: 1000
+      max-concurrent-requests: 25
+
+server:
+  forward-headers-strategy: native

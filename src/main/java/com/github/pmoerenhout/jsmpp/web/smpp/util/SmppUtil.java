@@ -211,7 +211,7 @@ public class SmppUtil {
 
   public static void logOptionalParameters(final OptionalParameter[] optionalParameters, final String prefix) {
     Arrays.stream(optionalParameters).forEach(o -> {
-          log.debug("{} optional {} {}: {}", prefix, o.getClass().getName(), o.tag, Util.bytesToHexString(o.serialize()));
+          log.trace("{} optional {} {}: {}", prefix, o.getClass().getName(), o.tag, Util.bytesToHexString(o.serialize()));
           if (o instanceof OptionalParameter.Null) {
             log.info("{} optional {}: null", prefix, o.tag);
           } else if (o instanceof OptionalParameter.Byte) {
