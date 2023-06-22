@@ -80,7 +80,10 @@ public class WebController {
               d.isMoreMessagesToSend(), GSMSpecificFeature.UDHI.containedIn(d.getEsmClass()), GSMSpecificFeature.REPLYPATH.containedIn(d.getEsmClass()),
               userDataHeader, message));
     });
-    modelMap.addAttribute("msisdn", "+31682346962");
+    // KPN Prepaid
+    //modelMap.addAttribute("msisdn", "+31682346962");
+    // T-Mobile Prepaid
+    modelMap.addAttribute("msisdn", "+31642791436");
     modelMap.addAttribute("sms", delivers);
     return "show";
   }
