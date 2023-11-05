@@ -15,7 +15,7 @@ smpp:
       enabled: true
       service-type: CMT
       charset: CCPGSM
-      host: 217.105.66.200
+      host: 95.99.209.11
       port: 2075
       system-id: sys1
       password: secret
