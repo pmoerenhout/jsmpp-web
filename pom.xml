@@ -41,7 +41,7 @@
     <at-commander.version>1.0-SNAPSHOT</at-commander.version>
     <pduutils.version>0.0.1-SNAPSHOT</pduutils.version>
     <bootstrap.version>5.2.3</bootstrap.version>
-    <jquery.version>3.6.4</jquery.version>
+    <jquery.version>3.7.1</jquery.version>
     <h2.version>1.4.200</h2.version>
     <font-awesome.version>5.15.4</font-awesome.version>
     <sockjs-client.version>1.5.1</sockjs-client.version>
