@@ -14,7 +14,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.7.17</version>
+    <version>2.7.18</version>
   </parent>
 
   <developers>
@@ -54,9 +54,9 @@
     <commons-rng.version>1.5</commons-rng.version>
 
     <jcharset.version>2.1</jcharset.version>
-    <jsmpp.version>3.0.0</jsmpp.version>
+    <jsmpp.version>3.0.1</jsmpp.version>
     <jsmpp-pool.version>1.0-SNAPSHOT</jsmpp-pool.version>
-    <log4j2.version>2.20.0</log4j2.version>
+    <log4j2.version>2.21.0</log4j2.version>
     <marineapi.version>0.11.0</marineapi.version>
     <throwable-interfaces.verson>1.13</throwable-interfaces.verson>
 
