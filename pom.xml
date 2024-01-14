@@ -40,7 +40,7 @@
 
     <at-commander.version>1.0-SNAPSHOT</at-commander.version>
     <pduutils.version>0.0.1-SNAPSHOT</pduutils.version>
-    <bootstrap.version>5.2.3</bootstrap.version>
+    <bootstrap.version>5.3.2</bootstrap.version>
     <jquery.version>3.7.1</jquery.version>
     <h2.version>1.4.200</h2.version>
     <font-awesome.version>5.15.4</font-awesome.version>
@@ -48,7 +48,7 @@
     <stomp-websocket.version>2.3.4</stomp-websocket.version>
 
     <commons-collections4.version>4.4</commons-collections4.version>
-    <commons-lang3.version>3.13.0</commons-lang3.version>
+    <commons-lang3.version>3.14.0</commons-lang3.version>
     <commons-pool2.version>2.12.0</commons-pool2.version>
     <commons-text.version>1.11.0</commons-text.version>
     <commons-rng.version>1.5</commons-rng.version>
@@ -56,8 +56,8 @@
     <jcharset.version>2.1</jcharset.version>
     <jsmpp.version>3.0.1</jsmpp.version>
     <jsmpp-pool.version>1.0-SNAPSHOT</jsmpp-pool.version>
-    <log4j2.version>2.21.0</log4j2.version>
-    <marineapi.version>0.11.0</marineapi.version>
+    <log4j2.version>2.22.0</log4j2.version>
+    <marineapi.version>0.12.0</marineapi.version>
     <throwable-interfaces.verson>1.13</throwable-interfaces.verson>
 
     <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
