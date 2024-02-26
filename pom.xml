@@ -40,7 +40,7 @@
 
     <at-commander.version>1.0-SNAPSHOT</at-commander.version>
     <pduutils.version>0.0.1-SNAPSHOT</pduutils.version>
-    <bootstrap.version>5.3.2</bootstrap.version>
+    <bootstrap.version>5.3.3</bootstrap.version>
     <jquery.version>3.7.1</jquery.version>
     <h2.version>1.4.200</h2.version>
     <font-awesome.version>5.15.4</font-awesome.version>
