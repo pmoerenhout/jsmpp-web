@@ -35,7 +35,9 @@ spring:
 logging:
   level:
     com.github.pmoerenhout: debug
+    com.zaxxer.hikari: info
     org.flywaydb: trace
+    org.hibernate: info
     org.jsmpp: trace
     org.jsmpp.bean.OptionalParameters: warn
     org.springframework: info
@@ -57,7 +59,7 @@ smpp:
       system-type: CGL
       bind-type: BIND_TRX
       bind-timeout: 5000
-      enquire-link-timer: 15000
+      enquire-link-timer: 315000
       transaction-timer: 5000
       pdu-processor-degree: 2
       long-sms-enabled: true

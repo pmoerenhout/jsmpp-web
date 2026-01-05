@@ -1,18 +1,13 @@
 package com.github.pmoerenhout.jsmpp.web.jpa.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.github.pmoerenhout.jsmpp.web.Util;
+
+import javax.persistence.*;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "smin")
@@ -308,9 +303,10 @@ public class SmIn implements Serializable {
       sb.append("null");
     } else {
       sb.append('[');
-      for (int i = 0; i < shortMessage.length; ++i) {
-        sb.append(i == 0 ? "" : ", ").append(shortMessage[i]);
-      }
+      Util.bytesToHexString(shortMessage);
+//      for (int i = 0; i < shortMessage.length; ++i) {
+//        sb.append(i == 0 ? "" : ", ").append(shortMessage[i]);
+//      }
       sb.append(']');
     }
     sb.append(", smscAddress='").append(smscAddress).append('\'');

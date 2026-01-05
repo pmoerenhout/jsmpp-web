@@ -15,21 +15,21 @@ smpp:
       enabled: true
       service-type: CMT
       charset: CCPGSM
-      host: 95.99.209.11
+      host: 31.20.167.187
       port: 2075
       system-id: sys1
       password: secret
       system-type: CGL
       bind-type: BIND_TRX
       bind-timeout: 5000
-      enquire-link-timer: 60000
+      enquire-link-timer: 120000
       transaction-timer: 5000
       pdu-processor-degree: 2
       long-sms-enabled: true
       long-sms-max-size: 1600
-      pool-max-total: 2
+      pool-max-total: 1
       pool-min-idle: 1
-      pool-max-idle: 2
+      pool-max-idle: 1
       pool-rate: 1000
       max-concurrent-requests: 25
 

@@ -1,23 +1,13 @@
 package com.github.pmoerenhout.jsmpp.web.jpa.model;
 
-import java.io.Serializable;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.UUID;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinColumns;
-import javax.persistence.OneToOne;
-import javax.persistence.Table;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.github.pmoerenhout.jsmpp.web.Util;
+
+import javax.persistence.*;
+import java.io.Serializable;
+import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 @Table(name = "smout")
@@ -315,7 +305,7 @@ public class SmOut implements Serializable {
     sb.append(", scheduled='").append(scheduled).append('\'');
     sb.append(", validityPeriod='").append(validityPeriod).append('\'');
     sb.append(", replaceIfPresentFlag=").append(replaceIfPresentFlag);
-    sb.append(", shortMessage=").append(Arrays.toString(shortMessage));
+    sb.append(", shortMessage=").append(Util.bytesToHexString(shortMessage));
     sb.append(", messageId='").append(messageId).append('\'');
     sb.append(", dr=").append(dr);
     sb.append('}');

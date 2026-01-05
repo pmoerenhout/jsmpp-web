@@ -1,28 +1,15 @@
 package com.github.pmoerenhout.jsmpp.web.smpp;
 
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
+import com.github.pmoerenhout.jsmpp.pool.PooledSMPPSession;
+import com.github.pmoerenhout.jsmpp.pool.ThrottledSMPPSession;
+import com.github.pmoerenhout.jsmpp.web.exception.ConnectionNotFoundException;
+import com.github.pmoerenhout.jsmpp.web.sms.SmsService;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jsmpp.InvalidResponseException;
 import org.jsmpp.PDUException;
-import org.jsmpp.bean.Address;
-import org.jsmpp.bean.Alphabet;
-import org.jsmpp.bean.ESMClass;
-import org.jsmpp.bean.GeneralDataCoding;
-import org.jsmpp.bean.MessageClass;
-import org.jsmpp.bean.NumberingPlanIndicator;
-import org.jsmpp.bean.RegisteredDelivery;
-import org.jsmpp.bean.ReplaceIfPresentFlag;
-import org.jsmpp.bean.SMSCDeliveryReceipt;
-import org.jsmpp.bean.TypeOfNumber;
-import org.jsmpp.bean.UnsuccessDelivery;
+import org.jsmpp.bean.*;
 import org.jsmpp.extra.NegativeResponseException;
 import org.jsmpp.extra.ResponseTimeoutException;
 import org.jsmpp.session.MessageReceiverListener;
@@ -41,12 +28,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
-import com.github.pmoerenhout.jsmpp.pool.PooledSMPPSession;
-import com.github.pmoerenhout.jsmpp.pool.ThrottledSMPPSession;
-import com.github.pmoerenhout.jsmpp.web.exception.ConnectionNotFoundException;
-import com.github.pmoerenhout.jsmpp.web.sms.SmsService;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.*;
 
 @Slf4j
 @AllArgsConstructor
@@ -86,6 +70,9 @@ public class SmppClientService implements ApplicationContextAware {
         log.info("SMPP connection '{}' is not enabled, skipping...", connectionId);
         continue;
       }
+      log.info("SMPP connection '{}': enquire Link Timer {} transaction timer {}", smppConnection.getContextId(),
+          smppConnection.getEnquireLinkTimer(),
+          smppConnection.getTransactionTimer());
       PooledSMPPSession pooledSMPPSession = null;
       try {
         final String contextId = smppConnection.getContextId();
